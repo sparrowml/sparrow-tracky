@@ -41,7 +41,6 @@ formatting: codestyle
 .PHONY: test
 test:
 	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
-	poetry run coverage-badge -o assets/images/coverage.svg -f
 
 .PHONY: check-codestyle
 check-codestyle:
