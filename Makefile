@@ -41,7 +41,6 @@ formatting: codestyle
 .PHONY: test
 test:
 	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
-	poetry run coverage-badge -o assets/images/coverage.svg -f
 
 .PHONY: check-codestyle
 check-codestyle:
@@ -111,3 +110,13 @@ build-remove:
 
 .PHONY: cleanup
 cleanup: pycache-remove dsstore-remove mypycache-remove ipynbcheckpoints-remove pytestcache-remove
+
+.PHONY: branchify
+branchify:
+ifneq ($(shell git rev-parse --abbrev-ref HEAD),main)
+	poetry version $(shell poetry version -s).dev$(shell date +%s)
+endif
+
+.PHONY: publish
+publish: branchify
+	poetry publish --build --repository sparrow
