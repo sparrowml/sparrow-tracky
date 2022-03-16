@@ -22,8 +22,8 @@ name = "sparrow"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
-sparrow-datums = "^0.1.1"
 scipy = "^1.8"
+sparrow-datums = "^0.1.2"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
