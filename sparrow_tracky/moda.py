@@ -1,6 +1,8 @@
+from typing import Union
+
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from sparrow_datums import FrameBoxes, pairwise_iou
+from sparrow_datums import FrameAugmentedBoxes, FrameBoxes, pairwise_iou
 
 
 class MODA:
@@ -29,8 +31,8 @@ class MODA:
 
 
 def compute_moda(
-    predicted_boxes: FrameBoxes,
-    ground_truth_boxes: FrameBoxes,
+    predicted_boxes: Union[FrameAugmentedBoxes, FrameBoxes],
+    ground_truth_boxes: Union[FrameAugmentedBoxes, FrameBoxes],
     iou_threshold: float = 0.5,
 ) -> MODA:
     """
