@@ -17,11 +17,23 @@ class MODA:
         self.false_positives = false_positives
         self.n_truth = n_truth
 
-    def __add__(self, other: "MODA") -> "MODA":
+    def __add__(self, other: Union[int, "MODA"]) -> "MODA":
+        if other == 0:
+            return self
         return MODA(
             false_negatives=self.false_negatives + other.false_negatives,
             false_positives=self.false_positives + other.false_positives,
             n_truth=self.n_truth + other.n_truth,
+        )
+
+    def __radd__(self, other: Union[int, "MODA"]) -> "MODA":
+        return self + other
+
+    def __repr__(self) -> str:
+        return (
+            f"MODA(false_negatives={self.false_negatives}, "
+            f"false_positives={self.false_positives}, "
+            f"n_truth={self.n_truth})"
         )
 
     @property

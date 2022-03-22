@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sparrow-tracky"
-version = "0.1.6"
+version = "0.1.7"
 description = "Object tracking and metrics"
 readme = "README.md"
 authors = ["Sparrow Computing <ben@sparrow.dev>"]
