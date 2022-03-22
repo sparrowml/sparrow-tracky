@@ -1,5 +1,7 @@
 from typing import Union
 
+from collections import defaultdict
+
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from sparrow_datums import FrameAugmentedBoxes, FrameBoxes, pairwise_iou
@@ -67,3 +69,19 @@ def compute_moda(
         false_positives=len(false_positives),
         n_truth=len(ground_truth_boxes),
     )
+
+
+def compute_moda_by_class(
+    predicted_boxes: FrameAugmentedBoxes,
+    ground_truth_boxes: FrameAugmentedBoxes,
+    iou_threshold: float = 0.5,
+) -> defaultdict[int, MODA]:
+    moda_collector: defaultdict[int, MODA] = defaultdict(MODA)
+    all_labels = set(predicted_boxes.labels) | set(ground_truth_boxes.labels)
+    for label in all_labels:
+        moda_collector[label] += compute_moda(
+            predicted_boxes[predicted_boxes.labels == label],
+            ground_truth_boxes[ground_truth_boxes.labels == label],
+            iou_threshold=iou_threshold,
+        )
+    return moda_collector
