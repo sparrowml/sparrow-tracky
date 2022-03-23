@@ -1,6 +1,5 @@
-from typing import Union
-
 from collections import defaultdict
+from typing import Union
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -8,7 +7,7 @@ from sparrow_datums import FrameAugmentedBoxes, FrameBoxes, pairwise_iou
 
 
 class MODA:
-    """A summable metric class to track the components of MODA"""
+    """A summable metric class to track the components of MODA."""
 
     def __init__(
         self, false_negatives: int = 0, false_positives: int = 0, n_truth: int = 0
@@ -18,7 +17,8 @@ class MODA:
         self.n_truth = n_truth
 
     def __add__(self, other: Union[int, "MODA"]) -> "MODA":
-        if other == 0:
+        """Add two MODA objects."""
+        if isinstance(other, int):
             return self
         return MODA(
             false_negatives=self.false_negatives + other.false_negatives,
@@ -27,9 +27,11 @@ class MODA:
         )
 
     def __radd__(self, other: Union[int, "MODA"]) -> "MODA":
+        """Add two MODA objects."""
         return self + other
 
     def __repr__(self) -> str:
+        """Create a string representation."""
         return (
             f"MODA(false_negatives={self.false_negatives}, "
             f"false_positives={self.false_positives}, "
@@ -38,6 +40,7 @@ class MODA:
 
     @property
     def value(self) -> float:
+        """Compute the MODA metric."""
         n_errors = abs(self.false_negatives) + abs(self.false_positives)
         if self.n_truth == 0:
             return 0
@@ -50,7 +53,7 @@ def compute_moda(
     iou_threshold: float = 0.5,
 ) -> MODA:
     """
-    Compute MODA for a set of predicted boxes
+    Compute MODA for a set of predicted boxes.
 
     Parameters
     ----------
@@ -88,6 +91,7 @@ def compute_moda_by_class(
     ground_truth_boxes: FrameAugmentedBoxes,
     iou_threshold: float = 0.5,
 ) -> defaultdict[int, MODA]:
+    """Compute MODA separately for different classes."""
     moda_collector: defaultdict[int, MODA] = defaultdict(MODA)
     all_labels = set(predicted_boxes.labels) | set(ground_truth_boxes.labels)
     for label in all_labels:
