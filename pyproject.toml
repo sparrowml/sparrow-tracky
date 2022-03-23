@@ -28,7 +28,6 @@ sparrow-datums = ">=0.4.0"
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
 black = {version = "^21.10b0", allow-prereleases = true}
-darglint = "^1.8.1"
 isort = "^5.10.1"
 mypy = "^0.910"
 mypy-extensions = "^0.4.3"
