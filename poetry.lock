@@ -1376,7 +1376,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sparrow-datums"
-version = "0.4.6.dev1648217114"
+version = "0.4.6.dev1648226881"
 description = "A Python package for data structures"
 category = "main"
 optional = false
@@ -2550,8 +2550,8 @@ soupsieve = [
     {file = "soupsieve-2.3.1.tar.gz", hash = "sha256:b8d49b1cd4f037c7082a9683dfa1801aa2597fb11c3a1155b7a5b94829b4f1f9"},
 ]
 sparrow-datums = [
-    {file = "sparrow-datums-0.4.6.dev1648217114.tar.gz", hash = "md5:5102c133ebd4bfb25deb8abc0af7985a"},
-    {file = "sparrow_datums-0.4.6.dev1648217114-py3-none-any.whl", hash = "md5:8fd35f18d1a312ef24dff3a484e79d09"},
+    {file = "sparrow-datums-0.4.6.dev1648226881.tar.gz", hash = "md5:45faa0d643031410c54ad5bd5cbe735c"},
+    {file = "sparrow_datums-0.4.6.dev1648226881-py3-none-any.whl", hash = "md5:0ade25a0b4fc99d2e4e39454a521f639"},
 ]
 sphinx = [
     {file = "Sphinx-4.4.0-py3-none-any.whl", hash = "sha256:5da895959511473857b6d0200f56865ed62c31e8f82dd338063b84ec022701fe"},
