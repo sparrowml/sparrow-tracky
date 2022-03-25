@@ -1,6 +1,8 @@
+from typing import Optional
+
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from sparrow_datums import FrameBoxes, pairwise_iou
+from sparrow_datums import BoxTracking, FrameBoxes, pairwise_iou
 
 from .tracklet import Tracklet
 
@@ -19,7 +21,7 @@ class Tracker:
         """
         self.active_tracklets: list[Tracklet] = []
         self.finished_tracklets: list[Tracklet] = []
-        self.previous_boxes: FrameBoxes = FrameBoxes(np.zeros((0, 4)))
+        self.previous_boxes: Optional[FrameBoxes] = None
         self.iou_threshold: float = iou_threshold
         self.frame_index: int = 0
 
@@ -32,12 +34,15 @@ class Tracker:
         boxes : FrameBoxes
             A ``(n_boxes, 4)`` array of bounding boxes
         """
+        if self.previous_boxes is None:
+            self.previous_boxes = self.empty_previous_boxes(boxes)
         prev_indices = boxes_indices = []
         if len(boxes) > 0 and len(self.previous_boxes) > 0:
             # Pairwise cost: euclidean distance between boxes
-            ious = 1 - pairwise_iou(self.previous_boxes, boxes)
+            ious = pairwise_iou(self.previous_boxes, boxes)
+            costs = 1 - ious
             # Object matching
-            prev_indices, boxes_indices = linear_sum_assignment(1 - ious)
+            prev_indices, boxes_indices = linear_sum_assignment(costs)
             mask = ious[prev_indices, boxes_indices] > self.iou_threshold
             prev_indices = prev_indices[mask]
             boxes_indices = boxes_indices[mask]
@@ -56,15 +61,13 @@ class Tracker:
             )
         # "Predict" next frame for comparison
         if len(self.active_tracklets):
-            self.previous_boxes = FrameBoxes(
-                np.stack(
-                    [tracklet.previous_box.array for tracklet in self.active_tracklets]
-                ),
+            self.previous_boxes = FrameBoxes.from_single_boxes(
+                [t.previous_box for t in self.active_tracklets],
                 ptype=boxes.ptype,
                 **boxes.metadata_kwargs,
             )
         else:
-            self.previous_boxes = np.zeros((0, 4)).view(FrameBoxes)
+            self.previous_boxes = self.empty_previous_boxes(boxes)
         self.frame_index += 1
 
     @property
@@ -72,4 +75,35 @@ class Tracker:
         """Return the list of all tracklets."""
         return sorted(
             self.finished_tracklets + self.active_tracklets, key=lambda t: t.start_index
+        )
+
+    def empty_previous_boxes(self, boxes: FrameBoxes) -> FrameBoxes:
+        """Initialize empty FrameBoxes for previous_boxes attribute."""
+        return FrameBoxes(
+            np.zeros((0, 4)),
+            ptype=boxes.ptype,
+            **boxes.metadata_kwargs,
+        )
+
+    def make_chunk(self, fps: float, min_tracklet_length: int = 1) -> BoxTracking:
+        """Consolidate tracklets to BoxTracking chunk."""
+        tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
+        if len(tracklets) == 0:
+            raise ValueError("No valid tracklets to make a chunk with")
+        ptype = tracklets[0].boxes.ptype
+        metadata = tracklets[0].boxes.metadata_kwargs
+        metadata["fps"] = fps
+        chunk_start = min(t.start_index for t in tracklets)
+        chunk_end = max(t.start_index + len(t) for t in tracklets)
+        n_frames = chunk_end - chunk_start
+        n_objects = len(tracklets)
+        data = np.zeros((n_frames, n_objects, 4)) * np.nan
+        for object_idx, tracklet in enumerate(tracklets):
+            start = tracklet.start_index - chunk_start
+            end = tracklet.start_index + len(tracklet) - chunk_start
+            data[start:end, object_idx] = tracklet.boxes.array
+        return BoxTracking(
+            data,
+            ptype=ptype,
+            **metadata,
         )
