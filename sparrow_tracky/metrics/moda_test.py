@@ -35,8 +35,8 @@ def test_moda_by_class():
     a = np.zeros((2, 6))
     a[:, -2] += 1
     a[:, -1] = np.array([0, 1])
-    boxes_a = FrameAugmentedBoxes(a)
-    boxes_b = FrameAugmentedBoxes(a)
+    boxes_a = FrameAugmentedBoxes(a, PType.absolute_tlwh)
+    boxes_b = FrameAugmentedBoxes(a, PType.absolute_tlwh)
     moda_dict = compute_moda_by_class(boxes_a, boxes_b)
     for label in (0, 1):
         assert label in moda_dict
