@@ -28,7 +28,7 @@ def test_no_ground_truth():
     boxes_a = FrameBoxes(a, PType.absolute_tlbr)
     boxes_b = FrameBoxes(np.zeros((0, 4)), PType.absolute_tlbr)
     moda = compute_moda(boxes_a, boxes_b)
-    assert moda.value == 0
+    assert moda.value == 1.0
 
 
 def test_moda_by_class():

@@ -43,7 +43,7 @@ class MODA:
         """Compute the MODA metric."""
         n_errors = abs(self.false_negatives) + abs(self.false_positives)
         if self.n_truth == 0:
-            return 0
+            return 1.0
         return 1 - n_errors / self.n_truth
 
 
