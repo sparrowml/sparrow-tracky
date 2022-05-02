@@ -1,0 +1,62 @@
+import numpy as np
+from sparrow_datums import BoxTracking, PType
+
+from .mota import MOTA, compute_mota
+
+
+def test_perfect_box_accuracy():
+    a = np.zeros((5, 2, 4))
+    a[..., 2:] += 1
+    boxes_a = BoxTracking(a, PType.absolute_tlbr)
+    boxes_b = boxes_a.copy()
+    mota = compute_mota(boxes_a, boxes_b)
+    assert mota.value == 1
+
+
+def test_no_predictions():
+    boxes_a = BoxTracking(np.zeros((2, 2, 4)) * np.nan, PType.absolute_tlbr)
+    b = np.zeros((5, 2, 4))
+    b[:, 2:] += 1
+    boxes_b = BoxTracking(b, PType.absolute_tlbr)
+    moda = compute_mota(boxes_a, boxes_b)
+    assert moda.value == 0
+
+
+def test_no_ground_truth():
+    a = np.zeros((5, 2, 4))
+    a[:, 2:] += 1
+    boxes_a = BoxTracking(a, PType.absolute_tlbr)
+    boxes_b = BoxTracking(np.zeros((2, 2, 4)) * np.nan, PType.absolute_tlbr)
+    moda = compute_mota(boxes_a, boxes_b)
+    assert moda.value == 1.0
+
+
+def test_mota_sum_function_works():
+    moda_a = MOTA(id_switches=1)
+    moda_b = MOTA(id_switches=2)
+    moda_c = sum([moda_a, moda_b], MOTA())
+    assert isinstance(moda_c, MOTA)
+    assert moda_c.id_switches == 3
+
+
+def test_string_representation():
+    assert "id_switches=0" in str(MOTA())
+
+
+def test_id_switch_is_counted():
+    b1 = np.zeros(4)
+    b1[2:] += 1
+    b2 = np.ones(4)
+    b2[2:] += 1
+    empty = np.ones(4) * np.nan
+    pred1 = np.stack([b1[None], b1[None], b1[None], b1[None]])
+    pred2 = np.stack([b2[None], b2[None], empty[None], empty[None]])
+    pred = np.concatenate([pred1, pred2], axis=1)
+    gt1 = np.stack([b1[None], b1[None], b2[None], b2[None]])
+    gt2 = np.stack([b2[None], b2[None], b1[None], b1[None]])
+    gt = np.concatenate([gt1, gt2], axis=1)
+    pred_tracking = BoxTracking(pred, PType.absolute_tlbr)
+    gt_tracking = BoxTracking(gt, PType.absolute_tlbr)
+    mota = compute_mota(pred_tracking, gt_tracking)
+    assert mota.id_switches == 1
+    assert mota.value == 0.625
