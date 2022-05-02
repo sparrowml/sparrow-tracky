@@ -113,20 +113,3 @@ def compute_mota(
         id_switches=n_id_switches,
         n_truth=n_ground_truth,
     )
-
-
-# def compute_moda_by_class(
-#     predicted_boxes: FrameAugmentedBoxes,
-#     ground_truth_boxes: FrameAugmentedBoxes,
-#     iou_threshold: float = 0.5,
-# ) -> defaultdict[int, MODA]:
-#     """Compute MODA separately for different classes."""
-#     moda_collector: defaultdict[int, MODA] = defaultdict(MODA)
-#     all_labels = set(predicted_boxes.labels) | set(ground_truth_boxes.labels)
-#     for label in all_labels:
-#         moda_collector[label] += compute_moda(
-#             predicted_boxes[predicted_boxes.labels == label],
-#             ground_truth_boxes[ground_truth_boxes.labels == label],
-#             iou_threshold=iou_threshold,
-#         )
-#     return moda_collector
