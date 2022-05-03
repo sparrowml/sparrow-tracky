@@ -758,7 +758,7 @@ python-versions = "*"
 
 [[package]]
 name = "nbclient"
-version = "0.6.0"
+version = "0.6.2"
 description = "A client library for executing notebooks. Formerly nbconvert's ExecutePreprocessor."
 category = "dev"
 optional = false
@@ -809,7 +809,7 @@ webpdf = ["pyppeteer (>=1,<1.1)"]
 
 [[package]]
 name = "nbformat"
-version = "5.3.0"
+version = "5.4.0"
 description = "The Jupyter Notebook format"
 category = "dev"
 optional = false
@@ -819,7 +819,7 @@ python-versions = ">=3.7"
 fastjsonschema = "*"
 jsonschema = ">=2.6"
 jupyter-core = "*"
-traitlets = ">=4.1"
+traitlets = ">=5.1"
 
 [package.extras]
 test = ["check-manifest", "testpath", "pytest", "pre-commit"]
@@ -1389,7 +1389,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sparrow-datums"
-version = "0.6.0.dev1651519093"
+version = "0.6.0.dev1651592078"
 description = "A Python package for data structures"
 category = "main"
 optional = false
@@ -1717,7 +1717,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.11"
-content-hash = "25994e5e42332bd35d6fe0d7b65eca267501f355226c7d7b5e70705822e5a13b"
+content-hash = "6de1ef9cc0447ebe22c54b55f814893f2f336e141ceecb3579637b79e2eea498"
 
 [metadata.files]
 alabaster = [
@@ -2207,16 +2207,16 @@ mypy-extensions = [
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
 ]
 nbclient = [
-    {file = "nbclient-0.6.0-py3-none-any.whl", hash = "sha256:2eed35fc954716cdf0a01ea8cbdd9f9316761479008570059e2f5de29e139423"},
-    {file = "nbclient-0.6.0.tar.gz", hash = "sha256:3f89a403c6badf24d2855a455b69a80985b3b27e04111243fdb6a88a28d27031"},
+    {file = "nbclient-0.6.2-py3-none-any.whl", hash = "sha256:0d575e1e2622ce433b0bb793fec7d8a77aacc2fd21831aec9be3bd48aaee126b"},
+    {file = "nbclient-0.6.2.tar.gz", hash = "sha256:8b47553f1ced077cd7c4537fd5d701d46f7681f24b28275e5cc1d347e7c9b46b"},
 ]
 nbconvert = [
     {file = "nbconvert-6.5.0-py3-none-any.whl", hash = "sha256:c56dd0b8978a1811a5654f74c727ff16ca87dd5a43abd435a1c49b840fcd8360"},
     {file = "nbconvert-6.5.0.tar.gz", hash = "sha256:223e46e27abe8596b8aed54301fadbba433b7ffea8196a68fd7b1ff509eee99d"},
 ]
 nbformat = [
-    {file = "nbformat-5.3.0-py3-none-any.whl", hash = "sha256:38856d97de49e8292e2d5d8f595e9d26f02abfd87e075d450af4511870b40538"},
-    {file = "nbformat-5.3.0.tar.gz", hash = "sha256:fcc5ab8cb74e20b19570b5be809e2dba9b82836fd2761a89066ad43394ba29f5"},
+    {file = "nbformat-5.4.0-py3-none-any.whl", hash = "sha256:0d6072aaec95dddc39735c144ee8bbc6589c383fb462e4058abc855348152dad"},
+    {file = "nbformat-5.4.0.tar.gz", hash = "sha256:44ba5ca6acb80c5d5a500f1e5b83ede8cbe364d5a495c4c8cf60aaf1ba656501"},
 ]
 nest-asyncio = [
     {file = "nest_asyncio-1.5.5-py3-none-any.whl", hash = "sha256:b98e3ec1b246135e4642eceffa5a6c23a3ab12c82ff816a92c612d68205813b2"},
@@ -2594,8 +2594,8 @@ soupsieve = [
     {file = "soupsieve-2.3.2.post1.tar.gz", hash = "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"},
 ]
 sparrow-datums = [
-    {file = "sparrow-datums-0.6.0.dev1651519093.tar.gz", hash = "md5:8bf3d85553746772f615c0b7536dd8fe"},
-    {file = "sparrow_datums-0.6.0.dev1651519093-py3-none-any.whl", hash = "md5:32adfcac30ac5d273122aaefd4e3a753"},
+    {file = "sparrow-datums-0.6.0.dev1651592078.tar.gz", hash = "md5:b39cb6635600993688fd831d0267f6ca"},
+    {file = "sparrow_datums-0.6.0.dev1651592078-py3-none-any.whl", hash = "md5:3c86c623bb7c3c0221b3eb0612356992"},
 ]
 sphinx = [
     {file = "Sphinx-4.5.0-py3-none-any.whl", hash = "sha256:ebf612653238bcc8f4359627a9b7ce44ede6fdd75d9d30f68255c7383d3a6226"},

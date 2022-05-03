@@ -69,13 +69,14 @@ def compute_moda(
         return MODA(false_negatives=n, false_positives=0, n_truth=n)
     elif len(ground_truth_boxes) == 0:
         return MODA(false_negatives=0, false_positives=len(predicted_boxes), n_truth=0)
-    cost = 1 - pairwise_iou(predicted_boxes, ground_truth_boxes)
+    iou = pairwise_iou(predicted_boxes, ground_truth_boxes)
+    cost = 1 - iou
     pred_indices, gt_indices = linear_sum_assignment(cost)
 
     false_positives = set(np.arange(len(predicted_boxes))) - set(pred_indices)
     false_negatives = set(np.arange(len(ground_truth_boxes))) - set(gt_indices)
 
-    unmatched = cost[pred_indices, gt_indices] > iou_threshold
+    unmatched = iou[pred_indices, gt_indices] < iou_threshold
     false_positives |= set(pred_indices[unmatched])
     false_negatives |= set(gt_indices[unmatched])
 

@@ -80,8 +80,10 @@ def compute_mota(
     n_ground_truth = 0
     matches: dict[int, int] = {}
     for pred_frame, gt_frame in zip(predicted_tracking, ground_truth_tracking):
-        finite_pred_frame = pred_frame[~np.isnan(pred_frame.x)]
-        finite_gt_frame = gt_frame[~np.isnan(gt_frame.x)]
+        pred_finite_mask = np.isfinite(pred_frame.x)
+        gt_finite_mask = np.isfinite(gt_frame.x)
+        finite_pred_frame = pred_frame[pred_finite_mask]
+        finite_gt_frame = gt_frame[gt_finite_mask]
         n_ground_truth += len(finite_gt_frame)
         if len(finite_pred_frame) == 0:
             n_false_negatives += len(finite_gt_frame)
@@ -89,24 +91,28 @@ def compute_mota(
         elif len(finite_pred_frame) == 0:
             n_false_positives += len(finite_pred_frame)
             continue
-        cost = 1 - pairwise_iou(finite_pred_frame, finite_gt_frame)
+        iou = pairwise_iou(pred_frame, gt_frame)
+        cost = 1 - iou
+        cost = np.nan_to_num(cost, nan=np.finfo(cost.dtype).max)
         pred_indices, gt_indices = linear_sum_assignment(cost)
+        iou = np.nan_to_num(iou, nan=np.finfo(iou.dtype).min)
+        valid = iou[pred_indices, gt_indices] > iou_threshold
         new_matches: dict[int, int] = {}
-        for pred, gt in zip(pred_indices, gt_indices):
+        for pred, gt in zip(pred_indices[valid], gt_indices[valid]):
             new_matches[pred] = gt
             if pred in matches and matches[pred] != gt:
                 n_id_switches += 1
         matches = new_matches
 
-        false_positives = set(np.arange(len(finite_pred_frame))) - set(pred_indices)
-        false_negatives = set(np.arange(len(finite_gt_frame))) - set(gt_indices)
+        all_pred_indices = set(np.arange(len(pred_frame))[pred_finite_mask])
+        all_gt_indices = set(np.arange(len(gt_frame))[gt_finite_mask])
 
-        unmatched = cost[pred_indices, gt_indices] > iou_threshold
-        false_positives |= set(pred_indices[unmatched])
-        false_negatives |= set(gt_indices[unmatched])
+        false_positives = all_pred_indices - set(pred_indices[valid])
+        false_negatives = all_gt_indices - set(gt_indices[valid])
 
         n_false_positives += len(false_positives)
         n_false_negatives += len(false_negatives)
+
     return MOTA(
         false_negatives=n_false_negatives,
         false_positives=n_false_positives,
