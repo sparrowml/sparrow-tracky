@@ -1954,7 +1954,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "sparrow-datums"
-version = "0.6.0.dev1651613507"
+version = "0.6.0"
 description = "A Python package for data structures"
 category = "main"
 optional = false
@@ -2357,7 +2357,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.11"
-content-hash = "2d6ce4712321ecb71a44c9f893d94454e53764c732988544f91a3d86f98c5579"
+content-hash = "6d2f80cd78d30d679558e2120befccebb8880f838794d9235667b780833cc8fc"
 
 [metadata.files]
 aiohttp = [
@@ -3670,8 +3670,8 @@ soupsieve = [
     {file = "soupsieve-2.3.2.post1.tar.gz", hash = "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"},
 ]
 sparrow-datums = [
-    {file = "sparrow-datums-0.6.0.dev1651613507.tar.gz", hash = "md5:afdee3dded18ead3515ac3a7a9f6174e"},
-    {file = "sparrow_datums-0.6.0.dev1651613507-py3-none-any.whl", hash = "md5:158938cecebaddff03746e728e8a79c7"},
+    {file = "sparrow-datums-0.6.0.tar.gz", hash = "md5:8ed0a270f6fab31af081884578aafee2"},
+    {file = "sparrow_datums-0.6.0-py3-none-any.whl", hash = "md5:8021ca03b78f36a468c4639e6732fbee"},
 ]
 sphinx = [
     {file = "Sphinx-4.5.0-py3-none-any.whl", hash = "sha256:ebf612653238bcc8f4359627a9b7ce44ede6fdd75d9d30f68255c7383d3a6226"},
