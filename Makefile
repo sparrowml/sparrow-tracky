@@ -34,7 +34,6 @@ codestyle:
 .PHONY: formatting
 formatting: codestyle
 
-#* Linting
 .PHONY: test
 test:
 	PYTHONPATH=$(PYTHONPATH) FAST=$(FAST) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
@@ -118,3 +117,8 @@ endif
 .PHONY: publish
 publish: branchify
 	poetry publish --build --repository sparrow
+
+.PHONY: eval
+eval:
+	dvc repro
+	dvc metrics show

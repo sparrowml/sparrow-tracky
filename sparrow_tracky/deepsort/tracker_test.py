@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -78,5 +79,8 @@ def test_non_kalman_filter_mota():
         class_gt_tracking = tracking.filter_by_class(class_idx)
         mota = compute_mota(class_pred_tracking, class_gt_tracking)
         class_mota[CLASS_MAP[class_idx]] = mota.to_dict()
-    with open("data/metrics.json", "w") as f:
-        f.write(json.dumps(class_mota, indent=4, sort_keys=True))
+    folder = Path("data/no-kalman-filter")
+    folder.mkdir(exist_ok=True, parents=True)
+    for key, metrics in class_mota.items():
+        with open(folder / f"{key}.json", "w") as f:
+            f.write(json.dumps(metrics, indent=4, sort_keys=True))

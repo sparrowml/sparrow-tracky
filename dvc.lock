@@ -13,9 +13,18 @@ stages:
       md5: b06d6e1440f2d926d957d4d695c0c28b
       size: 4524
     - path: sparrow_tracky/deepsort/tracker_test.py
-      md5: a251b9db42716d351b2b399983b08d67
-      size: 2978
+      md5: 735695abe4b6ddb2651f0e40fb7353ef
+      size: 3144
     outs:
-    - path: data/metrics.json
-      md5: d637e5388b80c2af85dfc49465daaf94
-      size: 635
+    - path: data/no-kalman-filter/bicycle.json
+      md5: f86232b548092a4c58547aefa0f5a031
+      size: 115
+    - path: data/no-kalman-filter/car.json
+      md5: c1b897639b6faedf40ef1547b3aedf83
+      size: 134
+    - path: data/no-kalman-filter/chair.json
+      md5: e7730de0f0fbb2658a3ab5cbe5c0962c
+      size: 115
+    - path: data/no-kalman-filter/person.json
+      md5: 02035a071caea612c9ef7a27cd5c5610
+      size: 112
