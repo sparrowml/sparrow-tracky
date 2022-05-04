@@ -53,8 +53,21 @@ class MOTA:
             + abs(self.id_switches)
         )
         if self.n_truth == 0:
-            return 1.0
+            if n_errors == 0:
+                return 1.0
+            else:
+                return 0.0
         return 1 - n_errors / self.n_truth
+
+    def to_dict(self) -> dict[str, float]:
+        """Return a dict representation of the MOTA object."""
+        return dict(
+            false_negatives=self.false_negatives,
+            false_positives=self.false_positives,
+            id_switches=self.id_switches,
+            n_truth=self.n_truth,
+            value=self.value,
+        )
 
 
 def compute_mota(

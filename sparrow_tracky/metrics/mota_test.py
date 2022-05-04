@@ -29,7 +29,7 @@ def test_no_ground_truth():
     boxes_a = BoxTracking(a, PType.absolute_tlbr)
     boxes_b = BoxTracking(np.zeros((2, 2, 4)) * np.nan, PType.absolute_tlbr)
     moda = compute_mota(boxes_a, boxes_b)
-    assert moda.value == 1.0
+    assert moda.value == 0.0
 
 
 def test_mota_sum_function_works():
@@ -70,3 +70,9 @@ def test_identical_tracking_chunks_are_perfect():
     mota = compute_mota(chunk, chunk)
     assert mota.n_truth == 23698
     assert mota.value == 1.0
+
+
+def test_to_dict():
+    mota = MOTA()
+    mota_dict = mota.to_dict()
+    assert mota_dict["value"] == 1.0

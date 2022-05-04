@@ -2,6 +2,7 @@
 SHELL := /usr/bin/env bash
 PYTHON := python
 PYTHONPATH := `pwd`
+FAST ?= 1
 
 #* Docker variables
 IMAGE := sparrow_tracky
@@ -36,7 +37,7 @@ formatting: codestyle
 #* Linting
 .PHONY: test
 test:
-	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
+	PYTHONPATH=$(PYTHONPATH) FAST=$(FAST) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
 
 .PHONY: check-codestyle
 check-codestyle:

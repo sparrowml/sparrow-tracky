@@ -1,0 +1,21 @@
+schema: '2.0'
+stages:
+  test:
+    cmd: FAST=0 make test
+    deps:
+    - path: data/gt-tracking.json.gz
+      md5: bb1addb9865960b925287c37a830da32
+      size: 30462
+    - path: data/pred-detections.json.gz
+      md5: e7f71a90c7e5bcb9c4bb86eed280c05a
+      size: 615576
+    - path: sparrow_tracky/deepsort/tracker.py
+      md5: b06d6e1440f2d926d957d4d695c0c28b
+      size: 4524
+    - path: sparrow_tracky/deepsort/tracker_test.py
+      md5: a251b9db42716d351b2b399983b08d67
+      size: 2978
+    outs:
+    - path: data/metrics.json
+      md5: d637e5388b80c2af85dfc49465daaf94
+      size: 635
