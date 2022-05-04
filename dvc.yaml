@@ -1,0 +1,17 @@
+stages:
+  test:
+    cmd: FAST=0 make test
+    deps:
+      - data/gt-tracking.json.gz
+      - data/pred-detections.json.gz
+      - sparrow_tracky/deepsort/tracker.py
+      - sparrow_tracky/deepsort/tracker_test.py
+    metrics:
+      - data/no-kalman-filter/bicycle.json:
+          cache: false
+      - data/no-kalman-filter/car.json:
+          cache: false
+      - data/no-kalman-filter/chair.json:
+          cache: false
+      - data/no-kalman-filter/person.json:
+          cache: false

@@ -1,13 +1,23 @@
+import json
 import os
 import tempfile
 from functools import partial
+from pathlib import Path
 
 import numpy as np
-from sparrow_datums import BoxTracking, FrameBoxes, PType
+import pytest
+from sparrow_datums import AugmentedBoxTracking, BoxTracking, FrameBoxes, PType
 
+from ..metrics import compute_mota
 from .tracker import Tracker
 
 tlwh_boxes = partial(FrameBoxes, ptype=PType.absolute_tlwh)
+CLASS_MAP = {
+    1: "person",
+    2: "bicycle",
+    3: "car",
+    62: "chair",
+}
 
 
 def test_negative_iou_threshold_always_matches():
@@ -48,3 +58,29 @@ def test_make_chunk_makes_a_box_tracking_chunk():
         new_chunk = BoxTracking.from_file(path)
     assert isinstance(new_chunk, BoxTracking)
     assert chunk.shape == new_chunk.shape
+
+
+@pytest.mark.skipif(os.getenv("FAST") == "1", reason="Skip slow tests")
+def test_non_kalman_filter_mota():
+    detections = AugmentedBoxTracking.from_file("data/pred-detections.json.gz")
+    tracking = AugmentedBoxTracking.from_file("data/gt-tracking.json.gz")
+    if detections.fps != tracking.fps:
+        detections = detections.resample(tracking.fps)
+    all_classes = sorted([c for c in set(detections.labels.ravel()) if c >= 0])
+    class_mota = {}
+    for class_idx in all_classes:
+        class_detections = detections.filter_by_class(class_idx)
+        tracker = Tracker()
+        for frame in class_detections:
+            tracker.track(frame)
+        class_pred_tracking = tracker.make_chunk(
+            detections.fps, min_tracklet_length=round(detections.fps)
+        )
+        class_gt_tracking = tracking.filter_by_class(class_idx)
+        mota = compute_mota(class_pred_tracking, class_gt_tracking)
+        class_mota[CLASS_MAP[class_idx]] = mota.to_dict()
+    folder = Path("data/no-kalman-filter")
+    folder.mkdir(exist_ok=True, parents=True)
+    for key, metrics in class_mota.items():
+        with open(folder / f"{key}.json", "w") as f:
+            f.write(json.dumps(metrics, indent=4, sort_keys=True))

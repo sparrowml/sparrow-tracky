@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from sparrow_datums import BoxTracking, FrameBoxes, pairwise_iou
+from sparrow_datums import BoxTracking, FrameBoxes, PType, pairwise_iou
 
 from .tracklet import Tracklet
 
@@ -34,12 +34,14 @@ class Tracker:
         boxes : FrameBoxes
             A ``(n_boxes, 4)`` array of bounding boxes
         """
+        boxes = boxes[np.isfinite(boxes.x)]
         if self.previous_boxes is None:
             self.previous_boxes = self.empty_previous_boxes(boxes)
         prev_indices = boxes_indices = []
         if len(boxes) > 0 and len(self.previous_boxes) > 0:
             # Pairwise cost: euclidean distance between boxes
             ious = pairwise_iou(self.previous_boxes, boxes)
+            ious = np.nan_to_num(ious, nan=-1)
             costs = 1 - ious
             # Object matching
             prev_indices, boxes_indices = linear_sum_assignment(costs)
@@ -89,12 +91,16 @@ class Tracker:
         """Consolidate tracklets to BoxTracking chunk."""
         tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
         if len(tracklets) == 0:
-            raise ValueError("No valid tracklets to make a chunk with")
-        ptype = tracklets[0].boxes.ptype
-        metadata = tracklets[0].boxes.metadata_kwargs
-        metadata["fps"] = fps
-        chunk_start = min(t.start_index for t in tracklets)
-        chunk_end = max(t.start_index + len(t) for t in tracklets)
+            ptype = PType.unknown
+            metadata = {"fps": fps}
+            chunk_start = 0
+            chunk_end = 0
+        else:
+            ptype = tracklets[0].boxes.ptype
+            metadata = tracklets[0].boxes.metadata_kwargs
+            metadata["fps"] = fps
+            chunk_start = min(t.start_index for t in tracklets)
+            chunk_end = max(t.start_index + len(t) for t in tracklets)
         n_frames = chunk_end - chunk_start
         n_objects = len(tracklets)
         data = np.zeros((n_frames, n_objects, 4)) * np.nan

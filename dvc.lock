@@ -1,0 +1,30 @@
+schema: '2.0'
+stages:
+  test:
+    cmd: FAST=0 make test
+    deps:
+    - path: data/gt-tracking.json.gz
+      md5: bb1addb9865960b925287c37a830da32
+      size: 30462
+    - path: data/pred-detections.json.gz
+      md5: e7f71a90c7e5bcb9c4bb86eed280c05a
+      size: 615576
+    - path: sparrow_tracky/deepsort/tracker.py
+      md5: b06d6e1440f2d926d957d4d695c0c28b
+      size: 4524
+    - path: sparrow_tracky/deepsort/tracker_test.py
+      md5: 735695abe4b6ddb2651f0e40fb7353ef
+      size: 3144
+    outs:
+    - path: data/no-kalman-filter/bicycle.json
+      md5: f86232b548092a4c58547aefa0f5a031
+      size: 115
+    - path: data/no-kalman-filter/car.json
+      md5: c1b897639b6faedf40ef1547b3aedf83
+      size: 134
+    - path: data/no-kalman-filter/chair.json
+      md5: e7730de0f0fbb2658a3ab5cbe5c0962c
+      size: 115
+    - path: data/no-kalman-filter/person.json
+      md5: 02035a071caea612c9ef7a27cd5c5610
+      size: 112
