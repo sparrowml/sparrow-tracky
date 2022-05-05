@@ -79,6 +79,7 @@ def test_non_kalman_filter_mota():
         class_gt_tracking = tracking.filter_by_class(class_idx)
         mota = compute_mota(class_pred_tracking, class_gt_tracking)
         class_mota[CLASS_MAP[class_idx]] = mota.to_dict()
+        class_mota[CLASS_MAP[class_idx]]["_n_tracklets"] = len(tracker.tracklets)
     folder = Path("data/no-kalman-filter")
     folder.mkdir(exist_ok=True, parents=True)
     for key, metrics in class_mota.items():
