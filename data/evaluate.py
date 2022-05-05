@@ -17,7 +17,7 @@ CLASS_MAP = {
 def evaluate(
     detection_path: str = "data/pred-detections.json.gz",
     tracking_path: str = "data/gt-tracking.json.gz",
-    output_path: str = "data/no-kalman-filter",
+    output_path: str = "data/metrics",
 ) -> None:
     """Evaluate the tracking algorithm."""
     detections = AugmentedBoxTracking.from_file(detection_path)
