@@ -6,11 +6,11 @@ stages:
       - data/pred-detections.json.gz
       - data/evaluate.py
     metrics:
-      - data/no-kalman-filter/bicycle.json:
+      - data/metrics/bicycle.json:
           cache: false
-      - data/no-kalman-filter/car.json:
+      - data/metrics/car.json:
           cache: false
-      - data/no-kalman-filter/chair.json:
+      - data/metrics/chair.json:
           cache: false
-      - data/no-kalman-filter/person.json:
+      - data/metrics/person.json:
           cache: false
