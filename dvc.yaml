@@ -1,11 +1,10 @@
 stages:
   test:
-    cmd: FAST=0 make test
+    cmd: python data/evaluate.py
     deps:
       - data/gt-tracking.json.gz
       - data/pred-detections.json.gz
-      - sparrow_tracky/deepsort/tracker.py
-      - sparrow_tracky/deepsort/tracker_test.py
+      - data/evaluate.py
     metrics:
       - data/no-kalman-filter/bicycle.json:
           cache: false

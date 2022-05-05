@@ -2,7 +2,6 @@
 SHELL := /usr/bin/env bash
 PYTHON := python
 PYTHONPATH := `pwd`
-FAST ?= 1
 
 #* Docker variables
 IMAGE := sparrow_tracky
@@ -36,7 +35,7 @@ formatting: codestyle
 
 .PHONY: test
 test:
-	PYTHONPATH=$(PYTHONPATH) FAST=$(FAST) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
+	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov=sparrow_tracky sparrow_tracky/
 
 .PHONY: check-codestyle
 check-codestyle:
@@ -120,5 +119,5 @@ publish: branchify
 
 .PHONY: eval
 eval:
-	dvc repro
+	dvc repro -f
 	dvc metrics show

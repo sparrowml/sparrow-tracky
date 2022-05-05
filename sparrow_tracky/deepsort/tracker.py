@@ -10,14 +10,16 @@ from .tracklet import Tracklet
 class Tracker:
     """Maintain and update tracklets."""
 
-    def __init__(self, iou_threshold: float = 0.5, n_predictions: int = 5) -> None:
+    def __init__(self, iou_threshold: float = 0.5, n_predictions: int = 50) -> None:
         """
         Maintain and update tracklets.
 
         Parameters
         ----------
-        distance_threshold : float
-            A cost score beyond which potential pairs are eliminated
+        iou_threshold
+            An IoU score below which potential pairs are eliminated
+        n_predictions
+            The number of predictions to allow from a tracklet moving it to finished
         """
         self.active_tracklets: list[Tracklet] = []
         self.finished_tracklets: list[Tracklet] = []
@@ -80,9 +82,9 @@ class Tracker:
     @property
     def tracklets(self) -> list[Tracklet]:
         """Return the list of all tracklets."""
-        return sorted(
-            self.finished_tracklets + self.active_tracklets, key=lambda t: t.start_index
-        )
+        all_tracklets = self.finished_tracklets + self.active_tracklets
+        finalized_tracklets = [t.finalized for t in all_tracklets]
+        return sorted(finalized_tracklets, key=lambda t: t.start_index)
 
     def empty_previous_boxes(self, boxes: FrameBoxes) -> FrameBoxes:
         """Initialize empty FrameBoxes for previous_boxes attribute."""

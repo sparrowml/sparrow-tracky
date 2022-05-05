@@ -1,8 +1,8 @@
 {
-    "_n_tracklets": 612,
-    "false_negatives": 1000,
+    "_n_tracklets": 478,
+    "false_negatives": 1017,
     "false_positives": 0,
     "id_switches": 0,
     "n_truth": 16132,
-    "value": 0.9380114059013142
+    "value": 0.9369575998016365
 }
