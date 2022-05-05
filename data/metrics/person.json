@@ -1,7 +1,8 @@
 {
+    "_n_tracklets": 3,
     "false_negatives": 0,
-    "false_positives": 3783,
+    "false_positives": 0,
     "id_switches": 0,
     "n_truth": 0,
-    "value": 0.0
+    "value": 1.0
 }
