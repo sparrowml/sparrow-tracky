@@ -10,7 +10,7 @@ from .tracklet import Tracklet
 class Tracker:
     """Maintain and update tracklets."""
 
-    def __init__(self, iou_threshold: float = 0.5) -> None:
+    def __init__(self, iou_threshold: float = 0.5, n_predictions: int = 5) -> None:
         """
         Maintain and update tracklets.
 
@@ -24,6 +24,7 @@ class Tracker:
         self.previous_boxes: Optional[FrameBoxes] = None
         self.iou_threshold: float = iou_threshold
         self.frame_index: int = 0
+        self.n_predictions: int = n_predictions
 
     def track(self, boxes: FrameBoxes) -> None:
         """
@@ -52,9 +53,13 @@ class Tracker:
         for prev_idx, box_idx in zip(prev_indices, boxes_indices):
             self.active_tracklets[prev_idx].add_box(boxes.get_single_box(box_idx))
         # Finalize lost tracklets
-        lost_indices = set(range(len(self.active_tracklets))) - set(prev_indices)
-        for lost_idx in sorted(lost_indices, reverse=True):
-            self.finished_tracklets.append(self.active_tracklets.pop(lost_idx))
+        missing_indices = set(range(len(self.active_tracklets))) - set(prev_indices)
+        for missing_idx in sorted(missing_indices, reverse=True):
+            if self.active_tracklets[missing_idx].n_predicted > self.n_predictions:
+                self.finished_tracklets.append(self.active_tracklets.pop(missing_idx))
+            else:
+                box = self.active_tracklets[missing_idx].predict_next_box()
+                self.active_tracklets[missing_idx].add_box(box, observed=False)
         # Activate new tracklets
         new_indices = set(range(len(boxes))) - set(boxes_indices)
         for new_idx in new_indices:
@@ -64,7 +69,7 @@ class Tracker:
         # "Predict" next frame for comparison
         if len(self.active_tracklets):
             self.previous_boxes = FrameBoxes.from_single_boxes(
-                [t.previous_box for t in self.active_tracklets],
+                [t.predict_next_box() for t in self.active_tracklets],
                 ptype=boxes.ptype,
                 **boxes.metadata_kwargs,
             )
