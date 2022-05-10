@@ -100,20 +100,17 @@ class Tracker:
         if len(tracklets) == 0:
             ptype = PType.unknown
             metadata = {"fps": fps}
-            chunk_start = 0
-            chunk_end = 0
+            n_frames = 0
         else:
             ptype = tracklets[0].boxes.ptype
             metadata = tracklets[0].boxes.metadata_kwargs
             metadata["fps"] = fps
-            chunk_start = min(t.start_index for t in tracklets)
-            chunk_end = max(t.start_index + len(t) for t in tracklets)
-        n_frames = chunk_end - chunk_start
+            n_frames = max(t.start_index + len(t) for t in tracklets)
         n_objects = len(tracklets)
         data = np.zeros((n_frames, n_objects, 4)) * np.nan
         for object_idx, tracklet in enumerate(tracklets):
-            start = tracklet.start_index - chunk_start
-            end = tracklet.start_index + len(tracklet) - chunk_start
+            start = tracklet.start_index
+            end = tracklet.start_index + len(tracklet)
             data[start:end, object_idx] = tracklet.boxes.array
         return BoxTracking(
             data,
