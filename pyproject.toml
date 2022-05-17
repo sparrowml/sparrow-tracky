@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sparrow-tracky"
-version = "0.3.2"
+version = "0.3.3"
 description = "Object tracking and metrics"
 readme = "README.md"
 authors = ["Sparrow Computing <ben@sparrow.dev>"]
@@ -21,9 +21,9 @@ url = "https://pypi.fury.io/sparrow/"
 name = "sparrow"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = ">=3.8,<3.11"
 scipy = "^1.8"
-sparrow-datums = ">=0.6.0"
+sparrow-datums = "^0.6.5"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
