@@ -24,7 +24,7 @@ def evaluate(
     tracking = AugmentedBoxTracking.from_file(tracking_path)
     if detections.fps != tracking.fps:
         detections = detections.resample(tracking.fps)
-    all_classes = sorted([c for c in set(detections.labels.ravel()) if c >= 0])
+    all_classes = sorted(c for c in set(detections.labels.ravel()) if c >= 0)
     class_mota = {}
     for class_idx in all_classes:
         class_detections = detections.filter_by_class(class_idx)
