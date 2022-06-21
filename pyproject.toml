@@ -19,7 +19,7 @@ keywords = []  #! Update me
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
 scipy = "^1.8"
-sparrow-datums = ">=0.8.1.dev"
+sparrow-datums = "^0.8.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
