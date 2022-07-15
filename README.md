@@ -1,38 +1,8 @@
-# sparrow-tracky
+# Sparrow Tracky
 
-<div align="center">
+Sparrow Tracky is a Python package that implements basic object tracking and related metrics. The object tracking algorithm is a simplification of SORT and is designed for prototyping in Python -- not for production. The metrics Multi-Object Detection Accuracy (MODA) and Multi-Object Tracking Accuracy (MOTA) are useful for measuring the quality of box predictions.
 
-Object tracking and metrics
-
-</div>
-
-### Poetry
-
-Want to know more about Poetry? Check [its documentation](https://python-poetry.org/docs/).
-
-<details>
-<summary>Details about Poetry</summary>
-<p>
-
-Poetry's [commands](https://python-poetry.org/docs/cli/#commands) are very intuitive and easy to learn, like:
-
-- `poetry add numpy@latest`
-- `poetry run pytest`
-- `poetry publish --build`
-
-etc
-</p>
-</details>
-
-## Building and releasing your package
-
-Building a new version of the application contains steps:
-
-- Bump the version of your package `poetry version <version>`. You can pass the new version explicitly, or a rule such as `major`, `minor`, or `patch`. For more details, refer to the [Semantic Versions](https://semver.org/) standard.
-- Make a commit to `GitHub`.
-- Create a `GitHub release`.
-- And... publish 🙂 `poetry publish --build`
-
+# Quick Start Example
 
 ## Installation
 
@@ -40,205 +10,36 @@ Building a new version of the application contains steps:
 pip install -U sparrow-tracky
 ```
 
-or install with `Poetry`
+## Measuring MODA on frame boxes
 
-```bash
-poetry add sparrow-tracky
+```python
+import numpy as np
+from sparrow_datums import FrameBoxes, PType
+from sparrow_tracky import compute_moda
+
+boxes = FrameBoxes(np.ones((4, 4)), PType.absolute_tlwh)
+moda = compute_moda(boxes, boxes + 0.1)
+moda
+
+# Expected result
+# MODA(false_negatives=0, false_positives=0, n_truth=4)
+
+moda.value
+
+# Expected result
+# 1.0
 ```
 
+## Adding MODA objects
 
+```python
+moda + moda
 
-### Makefile usage
+# Expected result
+# MODA(false_negatives=0, false_positives=0, n_truth=8)
 
-[`Makefile`](https://github.com/sparrowml/sparrow-tracky/blob/master/Makefile) contains a lot of functions for faster development.
+(moda + moda).value
 
-<details>
-<summary>1. Download and remove Poetry</summary>
-<p>
-
-To download and install Poetry run:
-
-```bash
-make poetry-download
+# Expected result
+# 1.0
 ```
-
-To uninstall
-
-```bash
-make poetry-remove
-```
-
-</p>
-</details>
-
-<details>
-<summary>2. Install all dependencies and pre-commit hooks</summary>
-<p>
-
-Install requirements:
-
-```bash
-make install
-```
-
-Pre-commit hooks coulb be installed after `git init` via
-
-```bash
-make pre-commit-install
-```
-
-</p>
-</details>
-
-<details>
-<summary>3. Codestyle</summary>
-<p>
-
-Automatic formatting uses `pyupgrade`, `isort` and `black`.
-
-```bash
-make codestyle
-
-# or use synonym
-make formatting
-```
-
-Codestyle checks only, without rewriting files:
-
-```bash
-make check-codestyle
-```
-
-> Note: `check-codestyle` uses `isort`, `black` and `darglint` library
-
-Update all dev libraries to the latest version using one comand
-
-```bash
-make update-dev-deps
-```
-
-<details>
-<summary>4. Code security</summary>
-<p>
-
-```bash
-make check-safety
-```
-
-This command launches `Poetry` integrity checks as well as identifies security issues with `Safety` and `Bandit`.
-
-```bash
-make check-safety
-```
-
-</p>
-</details>
-
-</p>
-</details>
-
-<details>
-<summary>5. Type checks</summary>
-<p>
-
-Run `mypy` static type checker
-
-```bash
-make mypy
-```
-
-</p>
-</details>
-
-<details>
-<summary>6. Tests with coverage badges</summary>
-<p>
-
-Run `pytest`
-
-```bash
-make test
-```
-
-</p>
-</details>
-
-<details>
-<summary>7. All linters</summary>
-<p>
-
-Of course there is a command to ~~rule~~ run all linters in one:
-
-```bash
-make lint
-```
-
-the same as:
-
-```bash
-make test && make check-codestyle && make mypy && make check-safety
-```
-
-</p>
-</details>
-
-<details>
-<summary>8. Docker</summary>
-<p>
-
-```bash
-make docker-build
-```
-
-which is equivalent to:
-
-```bash
-make docker-build VERSION=latest
-```
-
-Remove docker image with
-
-```bash
-make docker-remove
-```
-
-More information [about docker](https://github.com/sparrowml/sparrow-tracky/tree/master/docker).
-
-</p>
-</details>
-
-<details>
-<summary>9. Cleanup</summary>
-<p>
-Delete pycache files
-
-```bash
-make pycache-remove
-```
-
-Remove package build
-
-```bash
-make build-remove
-```
-
-Delete .DS_STORE files
-
-```bash
-make dsstore-remove
-```
-
-Remove .mypycache
-
-```bash
-make mypycache-remove
-```
-
-Or to remove all above run:
-
-```bash
-make cleanup
-```
-
-</p>
-</details>
