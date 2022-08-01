@@ -110,6 +110,8 @@ class Tracker:
     def make_chunk(self, fps: float, min_tracklet_length: int = 1) -> BoxTracking:
         """Consolidate tracklets to BoxTracking chunk."""
         tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
+        n_objects = len(tracklets)
+        object_ids = list(map(str, range(n_objects)))
         if len(tracklets) == 0:
             ptype = PType.unknown
             metadata = {"fps": fps}
@@ -119,7 +121,7 @@ class Tracker:
             metadata = tracklets[0].boxes.metadata_kwargs
             metadata["fps"] = fps
             n_frames = max(t.start_index + len(t) for t in tracklets)
-        n_objects = len(tracklets)
+        metadata["object_ids"] = object_ids
         data = np.zeros((n_frames, n_objects, 4)) * np.nan
         for object_idx, tracklet in enumerate(tracklets):
             start = tracklet.start_index

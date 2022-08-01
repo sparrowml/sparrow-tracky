@@ -52,6 +52,7 @@ def test_make_chunk_makes_a_box_tracking_chunk():
     chunk = tracker.make_chunk(fps=1, min_tracklet_length=2)
     assert isinstance(chunk, BoxTracking)
     assert chunk.fps == 1
+    assert isinstance(chunk.object_ids, list)
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "test.json.gz")
         chunk.to_file(path)
