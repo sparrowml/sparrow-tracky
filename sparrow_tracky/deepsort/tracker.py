@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,6 @@ class Tracker:
     def __init__(
         self,
         distance_threshold: float = 0.5,
-        n_predictions: int = 50,
         distance_function: Callable[
             [FrameBoxes, FrameBoxes], npt.NDArray[np.float64]
         ] = iou_distance,
@@ -29,8 +28,6 @@ class Tracker:
         ----------
         distance_threshold
             An IoU score below which potential pairs are eliminated
-        n_predictions
-            The number of predictions to allow from a tracklet moving it to finished
         distance_function
             Function for computing pairwise distances
         """
@@ -40,7 +37,6 @@ class Tracker:
         self.distance_threshold: float = distance_threshold
         self.distance_function = distance_function
         self.frame_index: int = 0
-        self.n_predictions: int = n_predictions
 
     def track(self, boxes: FrameBoxes) -> None:
         """
@@ -70,11 +66,7 @@ class Tracker:
         # Finalize lost tracklets
         missing_indices = set(range(len(self.active_tracklets))) - set(prev_indices)
         for missing_idx in sorted(missing_indices, reverse=True):
-            if self.active_tracklets[missing_idx].n_predicted > self.n_predictions:
-                self.finished_tracklets.append(self.active_tracklets.pop(missing_idx))
-            else:
-                box = self.active_tracklets[missing_idx].predict_next_box()
-                self.active_tracklets[missing_idx].add_box(box, observed=False)
+            self.finished_tracklets.append(self.active_tracklets.pop(missing_idx))
         # Activate new tracklets
         new_indices = set(range(len(boxes))) - set(boxes_indices)
         for new_idx in new_indices:
@@ -82,9 +74,9 @@ class Tracker:
                 Tracklet(self.frame_index, boxes.get_single_box(new_idx))
             )
         # "Predict" next frame for comparison
-        if len(self.active_tracklets):
+        if len(self.active_tracklets) > 0:
             self.previous_boxes = FrameBoxes.from_single_boxes(
-                [t.predict_next_box() for t in self.active_tracklets],
+                [t.previous_box for t in self.active_tracklets],
                 ptype=boxes.ptype,
                 **boxes.metadata_kwargs,
             )
@@ -112,6 +104,7 @@ class Tracker:
         tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
         n_objects = len(tracklets)
         object_ids = list(map(str, range(n_objects)))
+        metadata: dict[str, Any]
         if len(tracklets) == 0:
             ptype = PType.unknown
             metadata = {"fps": fps}

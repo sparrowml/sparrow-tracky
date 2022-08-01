@@ -48,26 +48,6 @@ class Tracklet:
         return self.boxes.get_single_box(-1)
 
     @property
-    def n_predicted(self) -> int:
-        """Return the number of predicted boxes at the end of the tracklet."""
-        n_predicted = 0
-        for observation in self.observed[::-1]:
-            if observation:
-                return n_predicted
-            n_predicted += 1
-        return n_predicted
-
-    def predict_next_box(self) -> SingleBox:
-        """
-        Return the prediction for the box at the next time step.
-
-        This method currently just returns the previous box, but
-        serves as a placeholder in case true box prediction makes sense
-        in the future.
-        """
-        return self.previous_box
-
-    @property
     def finalized(self) -> "Tracklet":
         """Remove predicted boxes."""
         mask = np.array(self.observed)

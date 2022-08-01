@@ -35,20 +35,3 @@ def test_len_of_tracklet():
     tracklet.add_box(box_b)
     tracklet.add_box(box_c)
     assert len(tracklet) == 3
-
-
-def test_n_predicted_is_zero_at_first():
-    box_a = SingleBox(np.random.randn(4))
-    tracklet = Tracklet(0, box_a)
-    assert tracklet.n_predicted == 0
-
-
-def test_n_predicted_grows_correctly():
-    box_a = SingleBox(np.random.randn(4))
-    box_b = SingleBox(np.zeros(4))
-    box_c = SingleBox(np.ones(4))
-    tracklet = Tracklet(0, box_a)
-    tracklet.add_box(box_b, observed=False)
-    assert tracklet.n_predicted == 1
-    tracklet.add_box(box_c, observed=False)
-    assert tracklet.n_predicted == 2
