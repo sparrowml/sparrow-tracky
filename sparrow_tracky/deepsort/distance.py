@@ -1,5 +1,3 @@
-from tkinter import Frame
-
 import numpy as np
 import numpy.typing as npt
 from sparrow_datums import FrameBoxes, pairwise_iou
