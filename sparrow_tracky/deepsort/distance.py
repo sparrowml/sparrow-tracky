@@ -3,7 +3,7 @@ import numpy.typing as npt
 from sparrow_datums import FrameBoxes, pairwise_iou
 
 
-def pairwise_iou_distance(a: FrameBoxes, b: FrameBoxes) -> npt.NDArray[np.float64]:
+def iou_distance(a: FrameBoxes, b: FrameBoxes) -> npt.NDArray[np.float64]:
     """Pairwise IoU as a distance."""
     ious: npt.NDArray[np.float64] = pairwise_iou(a, b)
     return 1 - ious

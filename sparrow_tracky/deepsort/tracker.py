@@ -7,7 +7,7 @@ import numpy.typing as npt
 from scipy.optimize import linear_sum_assignment
 from sparrow_datums import BoxTracking, FrameBoxes, PType
 
-from .distance import pairwise_iou_distance
+from .distance import iou_distance
 from .tracklet import Tracklet
 
 
@@ -20,7 +20,7 @@ class Tracker:
         n_predictions: int = 50,
         distance_function: Callable[
             [FrameBoxes, FrameBoxes], npt.NDArray[np.float64]
-        ] = pairwise_iou_distance,
+        ] = iou_distance,
     ) -> None:
         """
         Maintain and update tracklets.
