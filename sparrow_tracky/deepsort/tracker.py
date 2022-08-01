@@ -1,32 +1,44 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
+import numpy.typing as npt
 from scipy.optimize import linear_sum_assignment
-from sparrow_datums import BoxTracking, FrameBoxes, PType, pairwise_iou
+from sparrow_datums import BoxTracking, FrameBoxes, PType
 
+from .distance import pairwise_iou_distance
 from .tracklet import Tracklet
 
 
 class Tracker:
     """Maintain and update tracklets."""
 
-    def __init__(self, iou_threshold: float = 0.5, n_predictions: int = 50) -> None:
+    def __init__(
+        self,
+        distance_threshold: float = 0.5,
+        n_predictions: int = 50,
+        distance_function: Callable[
+            [FrameBoxes, FrameBoxes], npt.NDArray[np.float64]
+        ] = pairwise_iou_distance,
+    ) -> None:
         """
         Maintain and update tracklets.
 
         Parameters
         ----------
-        iou_threshold
+        distance_threshold
             An IoU score below which potential pairs are eliminated
         n_predictions
             The number of predictions to allow from a tracklet moving it to finished
+        distance_function
+            Function for computing pairwise distances
         """
         self.active_tracklets: list[Tracklet] = []
         self.finished_tracklets: list[Tracklet] = []
         self.previous_boxes: Optional[FrameBoxes] = None
-        self.iou_threshold: float = iou_threshold
+        self.distance_threshold: float = distance_threshold
+        self.distance_function = distance_function
         self.frame_index: int = 0
         self.n_predictions: int = n_predictions
 
@@ -44,13 +56,12 @@ class Tracker:
             self.previous_boxes = self.empty_previous_boxes(boxes)
         prev_indices = boxes_indices = []
         if len(boxes) > 0 and len(self.previous_boxes) > 0:
-            # Pairwise cost: euclidean distance between boxes
-            ious = pairwise_iou(self.previous_boxes, boxes)
-            ious = np.nan_to_num(ious, nan=-1)
-            costs = 1 - ious
+            # Pairwise cost between boxes
+            costs = self.distance_function(self.previous_boxes, boxes)
+            costs = np.nan_to_num(costs, nan=-1)
             # Object matching
             prev_indices, boxes_indices = linear_sum_assignment(costs)
-            mask = ious[prev_indices, boxes_indices] > self.iou_threshold
+            mask = costs[prev_indices, boxes_indices] < self.distance_threshold
             prev_indices = prev_indices[mask]
             boxes_indices = boxes_indices[mask]
         # Add matches to active tracklets

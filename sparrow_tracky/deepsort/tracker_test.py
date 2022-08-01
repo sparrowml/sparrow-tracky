@@ -3,15 +3,25 @@ import tempfile
 from functools import partial
 
 import numpy as np
+import numpy.typing as npt
 from sparrow_datums import BoxTracking, FrameBoxes, PType
 
+from .distance import euclidean_distance
 from .tracker import Tracker
 
 tlwh_boxes = partial(FrameBoxes, ptype=PType.absolute_tlwh)
+NDArray = npt.NDArray[np.float64]
 
 
-def test_negative_iou_threshold_always_matches():
-    tracker = Tracker(iou_threshold=-10)
+def test_large_iou_threshold_always_matches():
+    tracker = Tracker(distance_threshold=10)
+    tracker.track(tlwh_boxes(np.zeros((1, 4))))
+    tracker.track(tlwh_boxes(np.ones((1, 4))))
+    assert len(tracker.tracklets) == 1, "Boxes should get matched"
+
+
+def test_euclidean_distance_works():
+    tracker = Tracker(distance_threshold=10, distance_function=euclidean_distance)
     tracker.track(tlwh_boxes(np.zeros((1, 4))))
     tracker.track(tlwh_boxes(np.ones((1, 4))))
     assert len(tracker.tracklets) == 1, "Boxes should get matched"
@@ -26,8 +36,8 @@ def test_track_recovers_from_no_box_frames():
     assert len(tracker.active_tracklets) == 3, "Should have 3 active tracklets"
 
 
-def test_inf_threshold_never_matches():
-    tracker = Tracker(iou_threshold=np.inf)
+def test_negative_inf_threshold_never_matches():
+    tracker = Tracker(distance_threshold=-np.inf)
     tracker.track(tlwh_boxes(np.ones((1, 4))))
     tracker.track(tlwh_boxes(np.ones((1, 4))))
     assert len(tracker.tracklets) == 2, "Boxes shouldn't get matched"
