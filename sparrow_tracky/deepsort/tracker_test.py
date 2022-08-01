@@ -36,8 +36,8 @@ def test_track_recovers_from_no_box_frames():
     assert len(tracker.active_tracklets) == 3, "Should have 3 active tracklets"
 
 
-def test_negative_inf_threshold_never_matches():
-    tracker = Tracker(distance_threshold=-np.inf)
+def test_zero_threshold_never_matches():
+    tracker = Tracker(distance_threshold=0)
     tracker.track(tlwh_boxes(np.ones((1, 4))))
     tracker.track(tlwh_boxes(np.ones((1, 4))))
     assert len(tracker.tracklets) == 2, "Boxes shouldn't get matched"
