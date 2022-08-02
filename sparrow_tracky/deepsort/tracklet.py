@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Union
+from typing import Optional, Union
 
 from sparrow_datums import FrameBoxes, SingleBox
 
@@ -13,7 +13,7 @@ class Tracklet:
         self,
         start_index: int,
         box: Union[SingleBox, FrameBoxes],
-        object_id: str = str(uuid.uuid4()),
+        object_id: Optional[str] = None,
     ) -> None:
         """
         Store the location history for an object.
@@ -29,7 +29,7 @@ class Tracklet:
         """
         self.start_index = start_index
         self.boxes = FrameBoxes.from_single_box(box)
-        self.object_id = object_id
+        self.object_id = object_id if object_id else str(uuid.uuid4())
 
     def __len__(self) -> int:
         """Check number of boxes in the tracklet."""

@@ -59,3 +59,20 @@ def test_make_chunk_makes_a_box_tracking_chunk():
         new_chunk = BoxTracking.from_file(path)
     assert isinstance(new_chunk, BoxTracking)
     assert chunk.shape == new_chunk.shape
+
+
+def test_subsequent_make_chunk_calls_increment_start_time():
+    tracker = Tracker()
+    tracker.track(tlwh_boxes(np.ones((1, 4))))
+    tracker.track(tlwh_boxes(np.zeros((0, 4))))
+    chunk_a = tracker.make_chunk(fps=2)
+    assert len(chunk_a) == 2
+    assert chunk_a.start_time == 0
+    assert len(chunk_a.object_ids) == 1
+    tracker.track(tlwh_boxes(np.ones((3, 4))))
+    tracker.track(tlwh_boxes(np.ones((3, 4))))
+    chunk_b = tracker.make_chunk(fps=2)
+    assert len(chunk_b) == 2
+    assert chunk_b.start_time == 1.0
+    assert len(chunk_b.object_ids) == 3
+    assert len(set(chunk_a.object_ids).intersection(chunk_b.object_ids)) == 0

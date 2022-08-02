@@ -104,15 +104,14 @@ class Tracker:
         tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
         n_objects = len(tracklets)
         metadata: dict[str, Any]
+        n_frames = self.frame_index - self.start_frame
         if len(tracklets) == 0:
             ptype = PType.unknown
             metadata = {"fps": fps}
-            n_frames = 0
         else:
             ptype = tracklets[0].boxes.ptype
             metadata = tracklets[0].boxes.metadata_kwargs
             metadata["fps"] = fps
-            n_frames = max(t.start_index + len(t) - self.start_frame for t in tracklets)
         metadata["object_ids"] = [t.object_id for t in tracklets]
         metadata["start_time"] = self.start_frame / fps
         data = np.zeros((n_frames, n_objects, 4)) * np.nan
