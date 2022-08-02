@@ -121,9 +121,10 @@ class Tracker:
         metadata["start_time"] = self.start_frame / fps
         data = np.zeros((n_frames, n_objects, 4)) * np.nan
         for object_idx, tracklet in enumerate(tracklets):
-            start = tracklet.start_index - self.start_frame
+            start = max(tracklet.start_index - self.start_frame, 0)
             end = tracklet.start_index + len(tracklet) - self.start_frame
-            data[start:end, object_idx] = tracklet.boxes.array
+            n_tracklet_frames = end - start
+            data[start:end, object_idx] = tracklet.boxes.array[-n_tracklet_frames:]
         chunk = BoxTracking(
             data,
             ptype=ptype,
