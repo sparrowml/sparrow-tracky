@@ -37,6 +37,7 @@ class Tracker:
         self.distance_threshold: float = distance_threshold
         self.distance_function = distance_function
         self.frame_index: int = 0
+        self.start_frame: int = 0
 
     def track(self, boxes: FrameBoxes) -> None:
         """
@@ -88,8 +89,7 @@ class Tracker:
     def tracklets(self) -> list[Tracklet]:
         """Return the list of all tracklets."""
         all_tracklets = self.finished_tracklets + self.active_tracklets
-        finalized_tracklets = [t.finalized for t in all_tracklets]
-        return sorted(finalized_tracklets, key=lambda t: t.start_index)
+        return sorted(all_tracklets, key=lambda t: t.start_index)
 
     def empty_previous_boxes(self, boxes: FrameBoxes) -> FrameBoxes:
         """Initialize empty FrameBoxes for previous_boxes attribute."""
@@ -103,7 +103,6 @@ class Tracker:
         """Consolidate tracklets to BoxTracking chunk."""
         tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
         n_objects = len(tracklets)
-        object_ids = list(map(str, range(n_objects)))
         metadata: dict[str, Any]
         if len(tracklets) == 0:
             ptype = PType.unknown
@@ -113,15 +112,19 @@ class Tracker:
             ptype = tracklets[0].boxes.ptype
             metadata = tracklets[0].boxes.metadata_kwargs
             metadata["fps"] = fps
-            n_frames = max(t.start_index + len(t) for t in tracklets)
-        metadata["object_ids"] = object_ids
+            n_frames = max(t.start_index + len(t) - self.start_frame for t in tracklets)
+        metadata["object_ids"] = [t.object_id for t in tracklets]
+        metadata["start_time"] = self.start_frame / fps
         data = np.zeros((n_frames, n_objects, 4)) * np.nan
         for object_idx, tracklet in enumerate(tracklets):
-            start = tracklet.start_index
-            end = tracklet.start_index + len(tracklet)
+            start = tracklet.start_index - self.start_frame
+            end = tracklet.start_index + len(tracklet) - self.start_frame
             data[start:end, object_idx] = tracklet.boxes.array
-        return BoxTracking(
+        chunk = BoxTracking(
             data,
             ptype=ptype,
             **metadata,
         )
+        self.finished_tracklets = []
+        self.start_frame += len(chunk)
+        return chunk
