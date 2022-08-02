@@ -101,7 +101,12 @@ class Tracker:
 
     def make_chunk(self, fps: float, min_tracklet_length: int = 1) -> BoxTracking:
         """Consolidate tracklets to BoxTracking chunk."""
-        tracklets = [t for t in self.tracklets if len(t) >= min_tracklet_length]
+        tracklets = [
+            t
+            for t in self.tracklets
+            if len(t) >= min_tracklet_length
+            and t.start_index + len(t) > self.start_frame
+        ]
         n_objects = len(tracklets)
         metadata: dict[str, Any]
         n_frames = self.frame_index - self.start_frame
