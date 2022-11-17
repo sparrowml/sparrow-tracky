@@ -103,7 +103,7 @@ def compute_mota(
         if len(finite_pred_frame) == 0:
             n_false_negatives += len(finite_gt_frame)
             continue
-        elif len(finite_pred_frame) == 0:
+        elif len(finite_gt_frame) == 0:
             n_false_positives += len(finite_pred_frame)
             continue
         iou = pairwise_iou(pred_frame, gt_frame)
