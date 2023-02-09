@@ -50,7 +50,7 @@ class MultiClassTracker:
             A ``(n_boxes, 6)`` array of bounding boxes
         """
         for class_idx in range(self.n_classes):
-            _boxes = boxes[boxes.labels == class_idx]
+            _boxes = boxes[boxes.labels == class_idx].to_frame_boxes()
             self.trackers[class_idx].track(_boxes)
 
     def make_chunk(
