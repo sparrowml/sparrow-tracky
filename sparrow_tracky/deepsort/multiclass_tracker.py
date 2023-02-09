@@ -73,16 +73,19 @@ class MultiClassTracker:
         """Consolidate tracklets to AugmentedBoxTracking chunk."""
         n_frames = self.frame_index - self.start_frame
         n_objects = 0
+        chunks: dict[int, BoxTracking] = {}
         for class_idx in range(self.n_classes):
-            n_objects += len(self.trackers[class_idx].tracklets)
+            chunk = self.trackers[class_idx].make_chunk(fps, min_tracklet_length)
+            n_objects += chunk.shape[1]
+            chunks[class_idx] = chunk
         if n_objects == 0:
             return AugmentedBoxTracking(np.ones((n_frames, 0, 6)), ptype=PType.unknown)
         data = np.zeros((n_frames, n_objects, 6)) * np.nan
         object_idx = 0
         object_ids = []
         for class_idx in range(self.n_classes):
-            _n_objects = len(self.trackers[class_idx].tracklets)
-            chunk = self.trackers[class_idx].make_chunk(fps, min_tracklet_length)
+            chunk = chunks[class_idx]
+            _n_objects = chunk.shape[1]
             object_ids.extend(chunk.object_ids)
             data[:, object_idx : object_idx + _n_objects, :4] = chunk.array
             data[:, object_idx : object_idx + _n_objects, -2] = 1.0
