@@ -2,8 +2,13 @@ from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
-from sparrow_datums import (AugmentedBoxTracking, BoxTracking,
-                            FrameAugmentedBoxes, FrameBoxes, PType)
+from sparrow_datums import (
+    AugmentedBoxTracking,
+    BoxTracking,
+    FrameAugmentedBoxes,
+    FrameBoxes,
+    PType,
+)
 
 from .distance import iou_distance
 from .tracker import Tracker
