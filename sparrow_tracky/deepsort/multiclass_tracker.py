@@ -35,10 +35,24 @@ class MultiClassTracker:
         distance_function
             Function for computing pairwise distances
         """
+        if n_classes < 1:
+            raise ValueError(f"Invalid number of classes: {n_classes}")
         self.n_classes = n_classes
         self.trackers: dict[int, Tracker] = {}
         for class_idx in range(n_classes):
             self.trackers[class_idx] = Tracker(distance_threshold, distance_function)
+
+    @property
+    def _first_tracker(self) -> Tracker:
+        return self.trackers[0]
+
+    @property
+    def start_frame(self) -> int:
+        return self._first_tracker.start_frame
+
+    @property
+    def frame_index(self) -> int:
+        return self._first_tracker.frame_index
 
     def track(self, boxes: FrameAugmentedBoxes) -> None:
         """
@@ -57,7 +71,7 @@ class MultiClassTracker:
         self, fps: float, min_tracklet_length: int = 1
     ) -> AugmentedBoxTracking:
         """Consolidate tracklets to AugmentedBoxTracking chunk."""
-        n_frames = self.trackers[0].frame_index - self.trackers[0].start_frame
+        n_frames = self.frame_index - self.start_frame
         chunks: list[BoxTracking] = []
         n_objects = 0
         for class_idx in range(self.n_classes):
