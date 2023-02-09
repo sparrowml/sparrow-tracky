@@ -74,18 +74,21 @@ class MultiClassTracker:
         n_frames = self.frame_index - self.start_frame
         start_time = self.start_frame / fps
         n_objects = 0
+        metadata = {"fps": fps, "start_time": start_time}
         chunks: dict[int, BoxTracking] = {}
         for class_idx in range(self.n_classes):
             chunk = self.trackers[class_idx].make_chunk(fps, min_tracklet_length)
             n_objects += chunk.shape[1]
             chunks[class_idx] = chunk
         if n_objects == 0:
-            return AugmentedBoxTracking(np.ones((n_frames, 0, 6)), ptype=PType.unknown)
+            return AugmentedBoxTracking(
+                np.ones((n_frames, 0, 6)), ptype=PType.unknown, **metadata
+            )
         data = np.zeros((n_frames, n_objects, 6)) * np.nan
         object_idx = 0
         object_ids = []
         ptype = PType.unknown
-        metadata = {"fps": fps}
+
         for class_idx in range(self.n_classes):
             chunk = chunks[class_idx]
             if chunk.ptype != PType.unknown:
@@ -98,5 +101,4 @@ class MultiClassTracker:
             data[:, object_idx : object_idx + _n_objects, -1] = class_idx
             object_idx += _n_objects
         metadata["object_ids"] = object_ids
-        metadata["start_time"] = start_time
         return AugmentedBoxTracking(data, ptype=ptype, **metadata)
