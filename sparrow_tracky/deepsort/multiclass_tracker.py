@@ -87,6 +87,7 @@ class MultiClassTracker:
             data[:, object_idx : object_idx + _n_objects, :4] = chunk.array
             data[:, object_idx : object_idx + _n_objects, -2] = 1.0
             data[:, object_idx : object_idx + _n_objects, -1] = class_idx
+            object_idx += _n_objects
         metadata = {**chunk.metadata_kwargs}
         metadata["object_ids"] = object_ids
         return AugmentedBoxTracking(data, PType=chunk.ptype, **metadata)
