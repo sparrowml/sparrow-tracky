@@ -93,4 +93,4 @@ class MultiClassTracker:
             object_idx += _n_objects
         metadata = {**chunk.metadata_kwargs}
         metadata["object_ids"] = object_ids
-        return AugmentedBoxTracking(data, PType=chunk.ptype, **metadata)
+        return AugmentedBoxTracking(data, ptype=chunk.ptype, **metadata)
