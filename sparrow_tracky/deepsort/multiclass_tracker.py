@@ -83,14 +83,18 @@ class MultiClassTracker:
         data = np.zeros((n_frames, n_objects, 6)) * np.nan
         object_idx = 0
         object_ids = []
+        ptype = PType.unknown
+        metadata = {}
         for class_idx in range(self.n_classes):
             chunk = chunks[class_idx]
+            if chunk.ptype != PType.unknown:
+                ptype = chunk.ptype
+                metadata.update(chunk.metadata_kwargs)
             _n_objects = chunk.shape[1]
             object_ids.extend(chunk.object_ids)
             data[:, object_idx : object_idx + _n_objects, :4] = chunk.array
             data[:, object_idx : object_idx + _n_objects, -2] = 1.0
             data[:, object_idx : object_idx + _n_objects, -1] = class_idx
             object_idx += _n_objects
-        metadata = {**chunk.metadata_kwargs}
         metadata["object_ids"] = object_ids
-        return AugmentedBoxTracking(data, ptype=chunk.ptype, **metadata)
+        return AugmentedBoxTracking(data, ptype=ptype, **metadata)
