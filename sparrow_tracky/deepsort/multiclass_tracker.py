@@ -84,7 +84,7 @@ class MultiClassTracker:
         object_idx = 0
         object_ids = []
         ptype = PType.unknown
-        metadata = {}
+        metadata = {"fps": fps}
         for class_idx in range(self.n_classes):
             chunk = chunks[class_idx]
             if chunk.ptype != PType.unknown:
@@ -97,4 +97,5 @@ class MultiClassTracker:
             data[:, object_idx : object_idx + _n_objects, -1] = class_idx
             object_idx += _n_objects
         metadata["object_ids"] = object_ids
+        metadata["start_time"] = self.start_frame / fps
         return AugmentedBoxTracking(data, ptype=ptype, **metadata)
