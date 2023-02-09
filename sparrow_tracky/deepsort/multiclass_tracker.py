@@ -72,23 +72,21 @@ class MultiClassTracker:
     ) -> AugmentedBoxTracking:
         """Consolidate tracklets to AugmentedBoxTracking chunk."""
         n_frames = self.frame_index - self.start_frame
-        chunks: list[BoxTracking] = []
         n_objects = 0
         for class_idx in range(self.n_classes):
-            if len(self.trackers[class_idx].tracklets) == 0:
-                continue
-            chunk = self.trackers[class_idx].make_chunk(fps, min_tracklet_length)
-            n_objects += chunk.shape[1]
-            chunks.append(chunk)
-        if len(chunks) == 0:
+            n_objects += len(self.trackers[class_idx].tracklets)
+        if n_objects == 0:
             return AugmentedBoxTracking(np.ones((n_frames, 0, 6)), ptype=PType.unknown)
         data = np.zeros((n_frames, n_objects, 6)) * np.nan
         object_idx = 0
         object_ids = []
-        for chunk in chunks:
-            _n_objects = chunk.shape[1]
+        for class_idx in range(self.n_classes):
+            _n_objects = len(self.trackers[class_idx].tracklets)
+            chunk = self.trackers[class_idx].make_chunk(fps, min_tracklet_length)
             object_ids.extend(chunk.object_ids)
-            data[:, object_idx : object_idx + _n_objects] = chunk.array
+            data[:, object_idx : object_idx + _n_objects, :4] = chunk.array
+            data[:, object_idx : object_idx + _n_objects, -2] = 1.0
+            data[:, object_idx : object_idx + _n_objects, -1] = class_idx
         metadata = {**chunk.metadata_kwargs}
         metadata["object_ids"] = object_ids
         return AugmentedBoxTracking(data, PType=chunk.ptype, **metadata)
