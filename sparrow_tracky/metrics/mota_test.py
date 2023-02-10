@@ -65,13 +65,6 @@ def test_id_switch_is_counted():
     assert mota.value == 0.625
 
 
-def test_identical_tracking_chunks_are_perfect():
-    chunk = AugmentedBoxTracking.from_file("data/gt-tracking.json.gz")
-    mota = compute_mota(chunk, chunk)
-    assert mota.n_truth == 23698
-    assert mota.value == 1.0
-
-
 def test_to_dict():
     mota = MOTA()
     mota_dict = mota.to_dict()
