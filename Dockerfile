@@ -36,7 +36,8 @@ RUN mkdir sparrow_tracky && \
     touch sparrow_tracky/__init__.py
 COPY setup.cfg .
 COPY setup.py .
-RUN pip install -e . --user
+RUN pip install -U pip
+RUN pip install -e .
 ADD . .
 
 ENTRYPOINT [ "make" ]
