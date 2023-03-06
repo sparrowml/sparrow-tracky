@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Union
 
 import numpy as np
@@ -97,6 +98,12 @@ def compute_mota(
     n_id_switches = 0
     n_ground_truth = 0
     matches: dict[int, int] = {}
+    if len(predicted_tracking) > len(ground_truth_tracking):
+        new_shape = (len(predicted_tracking),) + ground_truth_tracking.shape[1:]
+        ground_truth_tracking = ground_truth_tracking.pad(new_shape)
+    if len(predicted_tracking) < len(ground_truth_tracking):
+        new_shape = (len(ground_truth_tracking),) + predicted_tracking.shape[1:]
+        predicted_tracking = predicted_tracking.pad(new_shape)
     for pred_frame, gt_frame in zip(predicted_tracking, ground_truth_tracking):
         pred_finite_mask = np.isfinite(pred_frame.x)
         gt_finite_mask = np.isfinite(gt_frame.x)
@@ -137,3 +144,22 @@ def compute_mota(
         id_switches=n_id_switches,
         n_truth=n_ground_truth,
     )
+
+
+def compute_mota_by_class(
+    predicted_tracking: AugmentedBoxTracking,
+    ground_truth_tracking: AugmentedBoxTracking,
+    iou_threshold: float = 0.5,
+) -> defaultdict[int, MOTA]:
+    """Compute MOTA separately for different classes."""
+    mota_collector: defaultdict[int, MOTA] = defaultdict(MOTA)
+    pred_labels = predicted_tracking.labels.ravel()
+    gt_labels = ground_truth_tracking.labels.ravel()
+    all_labels = set(pred_labels[pred_labels >= 0]) | set(gt_labels[gt_labels >= 0])
+    for label in all_labels:
+        mota_collector[label] += compute_mota(
+            predicted_tracking.filter_by_class(label),
+            ground_truth_tracking.filter_by_class(label),
+            iou_threshold=iou_threshold,
+        )
+    return mota_collector
