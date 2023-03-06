@@ -89,7 +89,8 @@ def compute_mota(
     iou_threshold : float
         The overlap threshold below which boxes are not considered the same
     """
-    if predicted_tracking.is_absolute and not ground_truth_tracking.is_absolute:
+    if predicted_tracking.is_absolute != ground_truth_tracking.is_absolute:
+        predicted_tracking = predicted_tracking.to_absolute()
         ground_truth_tracking = ground_truth_tracking.to_absolute()
     n_false_positives = 0
     n_false_negatives = 0
