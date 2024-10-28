@@ -20,6 +20,7 @@ class Tracker:
         distance_function: Callable[
             [FrameBoxes, FrameBoxes], npt.NDArray[np.float64]
         ] = iou_distance,
+        missing_threshold: int = 0,
     ) -> None:
         """
         Maintain and update tracklets.
@@ -30,14 +31,23 @@ class Tracker:
             An IoU score below which potential pairs are eliminated
         distance_function
             Function for computing pairwise distances
+        missing_threshold
+            Number of frames to wait before finalizing a tracklet
         """
         self.active_tracklets: list[Tracklet] = []
+        self.missing_tracklets: list[Tracklet] = []
         self.finished_tracklets: list[Tracklet] = []
         self.previous_boxes: Optional[FrameBoxes] = None
         self.distance_threshold: float = distance_threshold
         self.distance_function = distance_function
+        self.missing_threshold: int = missing_threshold
         self.frame_index: int = 0
         self.start_frame: int = 0
+
+    @property
+    def possible_tracklets(self) -> list[Tracklet]:
+        """Return the list of possible tracklets."""
+        return self.active_tracklets + self.missing_tracklets
 
     def track(self, boxes: FrameBoxes) -> None:
         """
@@ -63,11 +73,42 @@ class Tracker:
             boxes_indices = boxes_indices[mask]
         # Add matches to active tracklets
         for prev_idx, box_idx in zip(prev_indices, boxes_indices):
-            self.active_tracklets[prev_idx].add_box(boxes.get_single_box(box_idx))
-        # Finalize lost tracklets
-        missing_indices = set(range(len(self.active_tracklets))) - set(prev_indices)
+            if prev_idx < len(self.active_tracklets):
+                self.active_tracklets[prev_idx].add_box(boxes.get_single_box(box_idx))
+            else:
+                newly_active_tracklet = self.missing_tracklets.pop(
+                    prev_idx - len(self.active_tracklets)
+                )
+                newly_active_tracklet.finalize_missing_boxes()
+                newly_active_tracklet.add_box(boxes.get_single_box(box_idx))
+                self.active_tracklets.append(newly_active_tracklet)
+        # Handle lost tracklets
+        missing_indices = set(range(len(self.possible_tracklets))) - set(prev_indices)
         for missing_idx in sorted(missing_indices, reverse=True):
-            self.finished_tracklets.append(self.active_tracklets.pop(missing_idx))
+            if missing_idx < len(self.active_tracklets):
+                n_missing = len(self.active_tracklets[missing_idx].missing_boxes)
+                if n_missing < self.missing_threshold:
+                    newly_missing_tracklet = self.active_tracklets.pop(missing_idx)
+                    newly_missing_tracklet.add_missing_box()
+                    self.missing_tracklets.append(newly_missing_tracklet)
+                else:
+                    newly_finished_tracklet = self.active_tracklets.pop(missing_idx)
+                    newly_finished_tracklet.scratch_missing_boxes()
+                    self.finished_tracklets.append(newly_finished_tracklet)
+            else:
+                missing_tracklet_idx = missing_idx - len(self.active_tracklets)
+                n_missing = len(
+                    self.missing_tracklets[missing_tracklet_idx].missing_boxes
+                )
+                if n_missing < self.missing_threshold:
+                    self.missing_tracklets[missing_tracklet_idx].add_missing_box()
+                else:
+                    newly_finished_tracklet = self.missing_tracklets.pop(
+                        missing_tracklet_idx
+                    )
+                    newly_finished_tracklet.scratch_missing_boxes()
+                    self.finished_tracklets.append(newly_finished_tracklet)
+
         # Activate new tracklets
         new_indices = set(range(len(boxes))) - set(boxes_indices)
         for new_idx in new_indices:
@@ -75,9 +116,9 @@ class Tracker:
                 Tracklet(self.frame_index, boxes.get_single_box(new_idx))
             )
         # "Predict" next frame for comparison
-        if len(self.active_tracklets) > 0:
+        if len(self.possible_tracklets) > 0:
             self.previous_boxes = FrameBoxes.from_single_boxes(
-                [t.previous_box for t in self.active_tracklets],
+                [t.previous_box for t in self.possible_tracklets],
                 ptype=boxes.ptype,
                 **boxes.metadata_kwargs,
             )
@@ -88,7 +129,7 @@ class Tracker:
     @property
     def tracklets(self) -> list[Tracklet]:
         """Return the list of all tracklets."""
-        all_tracklets = self.finished_tracklets + self.active_tracklets
+        all_tracklets = self.finished_tracklets + self.possible_tracklets
         return sorted(all_tracklets, key=lambda t: t.start_index)
 
     def empty_previous_boxes(self, boxes: FrameBoxes) -> FrameBoxes:
