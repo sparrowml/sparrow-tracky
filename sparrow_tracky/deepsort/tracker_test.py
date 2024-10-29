@@ -82,6 +82,8 @@ def test_subsequent_make_chunk_calls_increment_start_time():
 
 def test_persistent_tracker():
     all_boxes = np.load(boxes_path)["data"]
+    # Make the last two boxes of the last object NaN
+    all_boxes[-2:, -1, :] = np.nan
     tlbr_boxes = partial(
         FrameBoxes,
         ptype=PType.relative_tlbr,
@@ -91,4 +93,3 @@ def test_persistent_tracker():
         tracker.track(boxes)
     box_tracking = tracker.make_chunk(fps=1, min_tracklet_length=30)
     assert box_tracking.shape == all_boxes.shape
-    assert np.isfinite(box_tracking.array).all()
