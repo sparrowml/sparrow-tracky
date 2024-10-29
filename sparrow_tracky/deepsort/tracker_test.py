@@ -12,7 +12,7 @@ from .tracker import Tracker
 
 tlwh_boxes = partial(FrameBoxes, ptype=PType.absolute_tlwh)
 NDArray = npt.NDArray[np.float64]
-boxes_path = Path(__file__).parent.parent.parent / "data" / "test-boxes.npz"
+boxes_path = Path(__file__).parent.parent.parent / "test-boxes.npz"
 
 
 def test_large_iou_threshold_always_matches():
