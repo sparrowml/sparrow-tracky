@@ -39,7 +39,7 @@ class Tracklet:
 
     def __len__(self) -> int:
         """Check number of boxes in the tracklet."""
-        return len(self.boxes)
+        return len(self.possible_boxes)
 
     def add_box(self, box: SingleBox) -> None:
         """Append a box to the end of the array."""
@@ -82,3 +82,8 @@ class Tracklet:
         if len(self.missing_boxes) > 0:
             return self.missing_boxes.get_single_box(-1)
         return self.boxes.get_single_box(-1)
+
+    @property
+    def n_missing(self) -> int:
+        """Return the number of missing boxes."""
+        return len(self.missing_boxes)

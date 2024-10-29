@@ -1,6 +1,7 @@
 import os
 import tempfile
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
@@ -11,6 +12,7 @@ from .tracker import Tracker
 
 tlwh_boxes = partial(FrameBoxes, ptype=PType.absolute_tlwh)
 NDArray = npt.NDArray[np.float64]
+boxes_path = Path(__file__).parent.parent.parent / "data" / "test-boxes.npz"
 
 
 def test_large_iou_threshold_always_matches():
@@ -76,3 +78,17 @@ def test_subsequent_make_chunk_calls_increment_start_time():
     assert chunk_b.start_time == 1.0
     assert len(chunk_b.object_ids) == 3
     assert len(set(chunk_a.object_ids).intersection(chunk_b.object_ids)) == 0
+
+
+def test_persistent_tracker():
+    all_boxes = np.load(boxes_path)["data"]
+    tlbr_boxes = partial(
+        FrameBoxes,
+        ptype=PType.relative_tlbr,
+    )
+    tracker = Tracker(distance_threshold=0.75, missing_threshold=30)
+    for boxes in map(tlbr_boxes, all_boxes):
+        tracker.track(boxes)
+    box_tracking = tracker.make_chunk(fps=1, min_tracklet_length=30)
+    assert box_tracking.shape == all_boxes.shape
+    assert np.isfinite(box_tracking.array).all()

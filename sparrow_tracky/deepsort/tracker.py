@@ -61,7 +61,8 @@ class Tracker:
         boxes = boxes[np.isfinite(boxes.x)]
         if self.previous_boxes is None:
             self.previous_boxes = self.empty_previous_boxes(boxes)
-        prev_indices = boxes_indices = []
+        prev_indices: list[int] = []
+        boxes_indices: list[int] = []
         if len(boxes) > 0 and len(self.previous_boxes) > 0:
             # Pairwise cost between boxes
             costs = self.distance_function(self.previous_boxes, boxes)
@@ -71,43 +72,62 @@ class Tracker:
             mask = costs[prev_indices, boxes_indices] < self.distance_threshold
             prev_indices = prev_indices[mask]
             boxes_indices = boxes_indices[mask]
+
+        tracklet_switches: dict[int, str] = {}
         # Add matches to active tracklets
         for prev_idx, box_idx in zip(prev_indices, boxes_indices):
             if prev_idx < len(self.active_tracklets):
                 self.active_tracklets[prev_idx].add_box(boxes.get_single_box(box_idx))
             else:
-                newly_active_tracklet = self.missing_tracklets.pop(
-                    prev_idx - len(self.active_tracklets)
+                # missing -> active
+                missing_tracklet_idx = prev_idx - len(self.active_tracklets)
+                self.missing_tracklets[missing_tracklet_idx].finalize_missing_boxes()
+                self.missing_tracklets[missing_tracklet_idx].add_box(
+                    boxes.get_single_box(box_idx)
                 )
-                newly_active_tracklet.finalize_missing_boxes()
-                newly_active_tracklet.add_box(boxes.get_single_box(box_idx))
-                self.active_tracklets.append(newly_active_tracklet)
+                tracklet_switches[prev_idx] = "active"
         # Handle lost tracklets
         missing_indices = set(range(len(self.possible_tracklets))) - set(prev_indices)
         for missing_idx in sorted(missing_indices, reverse=True):
             if missing_idx < len(self.active_tracklets):
-                n_missing = len(self.active_tracklets[missing_idx].missing_boxes)
+                n_missing = self.active_tracklets[missing_idx].n_missing
                 if n_missing < self.missing_threshold:
-                    newly_missing_tracklet = self.active_tracklets.pop(missing_idx)
-                    newly_missing_tracklet.add_missing_box()
-                    self.missing_tracklets.append(newly_missing_tracklet)
+                    # active -> missing
+                    self.active_tracklets[missing_idx].add_missing_box()
+                    tracklet_switches[missing_idx] = "missing"
                 else:
-                    newly_finished_tracklet = self.active_tracklets.pop(missing_idx)
-                    newly_finished_tracklet.scratch_missing_boxes()
-                    self.finished_tracklets.append(newly_finished_tracklet)
+                    # active -> finished
+                    self.active_tracklets[missing_idx].finalize_missing_boxes()
+                    tracklet_switches[missing_idx] = "finished"
             else:
                 missing_tracklet_idx = missing_idx - len(self.active_tracklets)
-                n_missing = len(
-                    self.missing_tracklets[missing_tracklet_idx].missing_boxes
-                )
+                n_missing = self.missing_tracklets[missing_tracklet_idx].n_missing
                 if n_missing < self.missing_threshold:
                     self.missing_tracklets[missing_tracklet_idx].add_missing_box()
                 else:
-                    newly_finished_tracklet = self.missing_tracklets.pop(
-                        missing_tracklet_idx
-                    )
-                    newly_finished_tracklet.scratch_missing_boxes()
-                    self.finished_tracklets.append(newly_finished_tracklet)
+                    # missing -> finished
+                    self.missing_tracklets[missing_tracklet_idx].scratch_missing_boxes()
+                    tracklet_switches[missing_idx] = "finished"
+
+        new_active: list[Tracklet] = []
+        new_missing: list[Tracklet] = []
+        new_finished: list[Tracklet] = []
+        for idx in sorted(tracklet_switches.keys(), reverse=True):
+            if idx < len(self.active_tracklets):
+                tracklet = self.active_tracklets.pop(idx)
+            else:
+                missing_tracklet_idx = idx - len(self.active_tracklets)
+                tracklet = self.missing_tracklets.pop(missing_tracklet_idx)
+            if tracklet_switches[idx] == "active":
+                new_active.append(tracklet)
+            elif tracklet_switches[idx] == "missing":
+                new_missing.append(tracklet)
+            elif tracklet_switches[idx] == "finished":
+                new_finished.append(tracklet)
+
+        self.active_tracklets.extend(new_active)
+        self.missing_tracklets.extend(new_missing)
+        self.finished_tracklets.extend(new_finished)
 
         # Activate new tracklets
         new_indices = set(range(len(boxes))) - set(boxes_indices)
