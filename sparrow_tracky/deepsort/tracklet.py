@@ -15,6 +15,7 @@ class Tracklet:
         start_index: int,
         box: Union[SingleBox, FrameBoxes],
         object_id: Optional[str] = None,
+        confidence: float = 1.0,
     ) -> None:
         """
         Store the location history for an object.
@@ -27,6 +28,8 @@ class Tracklet:
             A NumPy array with shape (4,)
         object_id
             An ID for the tracklet
+        confidence
+            Initial confidence score
         """
         self.start_index = start_index
         self.boxes = FrameBoxes.from_single_box(box)
@@ -36,6 +39,8 @@ class Tracklet:
             **self.boxes.metadata_kwargs,
         )
         self.object_id = object_id if object_id else str(uuid.uuid4())
+        self.confidence = confidence
+        self.time_since_update = 0
 
     def __len__(self) -> int:
         """Check number of boxes in the tracklet."""
@@ -44,10 +49,12 @@ class Tracklet:
     def add_box(self, box: SingleBox) -> None:
         """Append a box to the end of the array."""
         self.boxes = self.boxes.add_box(box)
+        self.time_since_update = 0
 
     def add_missing_box(self) -> None:
         """Append a box to the missing box list."""
         self.missing_boxes = self.missing_boxes.add_box(self.previous_box)
+        self.time_since_update += 1
 
     def scratch_missing_boxes(self) -> None:
         """Clear the missing box list."""
@@ -87,3 +94,8 @@ class Tracklet:
     def n_missing(self) -> int:
         """Return the number of missing boxes."""
         return len(self.missing_boxes)
+
+    @property
+    def is_activated(self) -> bool:
+        """Check if tracklet is activated (has at least one detection)."""
+        return len(self.boxes) > 0
