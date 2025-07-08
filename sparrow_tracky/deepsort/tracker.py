@@ -81,23 +81,20 @@ class Tracker:
         if self.previous_boxes is None:
             self.previous_boxes = self.empty_previous_boxes(boxes)
         
-        # ByteTrack: Separate detections by confidence
-        # Try to get confidences from boxes metadata, default to ones if not available
-        try:
-            confidences = getattr(boxes, 'confidences', None)
-            if confidences is None:
-                # Try to get from metadata
-                confidences = boxes.metadata_kwargs.get('confidences', np.ones(len(boxes)))
-        except:
-            confidences = np.ones(len(boxes))
+        # ByteTrack: Extract detection confidences, default to 1.0 if not available
+        confidences = getattr(boxes, 'confidences', None)
+        if confidences is None:
+            confidences = boxes.metadata_kwargs.get('confidences', None)
         
-        # Ensure confidences is a numpy array
-        if not isinstance(confidences, np.ndarray):
-            confidences = np.array(confidences)
-        
-        # Handle case where confidences might be scalar or wrong shape
-        if confidences.shape != (len(boxes),):
+        if confidences is None:
             confidences = np.ones(len(boxes))
+        else:
+            try:
+                confidences = np.asarray(confidences)
+                if confidences.shape != (len(boxes),):
+                    confidences = np.ones(len(boxes))
+            except (ValueError, TypeError):
+                confidences = np.ones(len(boxes))
         
         high_conf_mask = confidences >= self.high_thresh
         low_conf_mask = (confidences >= self.low_thresh) & (confidences < self.high_thresh)
@@ -173,7 +170,6 @@ class Tracker:
         # Step 6: Create new tracklets from high confidence unmatched detections
         high_conf_indices = np.where(high_conf_mask)[0]
         for det_idx in high_unmatched_dets:
-            # Map from high_conf_boxes index back to the original confidences array index
             original_idx = high_conf_indices[det_idx] if det_idx < len(high_conf_indices) else det_idx
             if original_idx < len(confidences) and confidences[original_idx] >= self.new_track_thresh:
                 self.active_tracklets.append(
