@@ -24,6 +24,7 @@ class Tracker:
         high_thresh: float = 0.6,
         low_thresh: float = 0.1,
         new_track_thresh: float = 0.7,
+        second_association_thresh: float = 0.5,
     ) -> None:
         """
         Maintain and update tracklets using ByteTrack algorithm.
@@ -31,7 +32,7 @@ class Tracker:
         Parameters
         ----------
         distance_threshold
-            An IoU score below which potential pairs are eliminated
+            An IoU score below which potential pairs are eliminated for high-confidence associations
         distance_function
             Function for computing pairwise distances
         missing_threshold
@@ -42,6 +43,9 @@ class Tracker:
             Low confidence threshold for detections
         new_track_thresh
             Threshold for creating new tracks
+        second_association_thresh
+            Threshold for associating low-confidence detections with unmatched tracks.
+            Typically more lenient than distance_threshold to recover tracks with poor detections.
         """
         self.active_tracklets: list[Tracklet] = []
         self.missing_tracklets: list[Tracklet] = []
@@ -57,6 +61,7 @@ class Tracker:
         self.high_thresh = high_thresh
         self.low_thresh = low_thresh
         self.new_track_thresh = new_track_thresh
+        self.second_association_thresh = second_association_thresh
 
     @property
     def possible_tracklets(self) -> list[Tracklet]:
@@ -110,9 +115,10 @@ class Tracker:
             self.active_tracklets[track_idx].add_box(high_conf_boxes.get_single_box(det_idx))
         
         # Step 2: Associate unmatched active tracklets with low confidence detections
+        # Use a more lenient threshold for low-confidence detections to recover tracks
         unmatched_active_tracklets = [self.active_tracklets[i] for i in active_unmatched_tracks]
         second_matches, second_unmatched_tracks, low_unmatched_dets = self._associate(
-            unmatched_active_tracklets, low_conf_boxes, 0.5
+            unmatched_active_tracklets, low_conf_boxes, self.second_association_thresh
         )
         
         # Update second round matched tracklets
@@ -167,6 +173,7 @@ class Tracker:
         # Step 6: Create new tracklets from high confidence unmatched detections
         high_conf_indices = np.where(high_conf_mask)[0]
         for det_idx in high_unmatched_dets:
+            # Map from high_conf_boxes index back to the original confidences array index
             original_idx = high_conf_indices[det_idx] if det_idx < len(high_conf_indices) else det_idx
             if original_idx < len(confidences) and confidences[original_idx] >= self.new_track_thresh:
                 self.active_tracklets.append(

@@ -28,6 +28,7 @@ class MultiClassTracker:
         high_thresh: float = 0.6,
         low_thresh: float = 0.1,
         new_track_thresh: float = 0.7,
+        second_association_thresh: float = 0.5,
     ) -> None:
         """
         Maintain and update tracklets using ByteTrack algorithm.
@@ -37,7 +38,7 @@ class MultiClassTracker:
         n_classes
             Number of classes to track
         distance_threshold
-            An IoU score below which potential pairs are eliminated
+            An IoU score below which potential pairs are eliminated for high-confidence associations
         distance_function
             Function for computing pairwise distances
         missing_threshold
@@ -48,6 +49,9 @@ class MultiClassTracker:
             Low confidence threshold for detections
         new_track_thresh
             Threshold for creating new tracks
+        second_association_thresh
+            Threshold for associating low-confidence detections with unmatched tracks.
+            Typically more lenient than distance_threshold to recover tracks with poor detections.
         """
         if n_classes < 1:
             raise ValueError(f"Invalid number of classes: {n_classes}")
@@ -61,6 +65,7 @@ class MultiClassTracker:
                 high_thresh=high_thresh,
                 low_thresh=low_thresh,
                 new_track_thresh=new_track_thresh,
+                second_association_thresh=second_association_thresh,
             )
 
     @property
