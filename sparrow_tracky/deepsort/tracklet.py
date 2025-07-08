@@ -82,9 +82,16 @@ class Tracklet:
         )
 
     def finalize_missing_boxes(self) -> None:
-        """Finish the missing box list."""
+        """
+        Finish the missing box list by adding all missing boxes to the main tracklet.
+        
+        Note: Missing boxes don't have associated confidence values, so we skip 
+        confidence updates to avoid artificially inflating or deflating the tracklet's 
+        confidence based on interpolated positions.
+        """
         for box in self.missing_boxes:
-            self.add_box(box)
+            # Skip confidence update for missing boxes as they are interpolated
+            self.add_box(box, confidence=None)
         self.missing_boxes = FrameBoxes(
             np.zeros((0, 4)),
             ptype=self.boxes.ptype,

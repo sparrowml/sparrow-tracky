@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import linear_sum_assignment
-from sparrow_datums import BoxTracking, FrameBoxes, PType
+from sparrow_datums import BoxTracking, FrameBoxes, PType, SingleBox
 
 from .distance import iou_distance
 from .tracklet import Tracklet
@@ -73,6 +73,41 @@ class Tracker:
         """Return the list of possible tracklets."""
         return self.active_tracklets + self.missing_tracklets
 
+    def _extract_confidences(self, boxes: FrameBoxes) -> np.ndarray:
+        """
+        Extract confidence values from boxes in a standardized way.
+        
+        Parameters
+        ----------
+        boxes : FrameBoxes
+            Input detection boxes
+            
+        Returns
+        -------
+        np.ndarray
+            Array of confidence values, defaults to 1.0 if not available
+        """
+        # Try to get confidences from boxes attribute first
+        confidences = getattr(boxes, 'confidences', None)
+        
+        # Fall back to metadata
+        if confidences is None:
+            confidences = boxes.metadata_kwargs.get('confidences', None)
+        
+        # Default to ones if still None
+        if confidences is None:
+            return np.ones(len(boxes))
+        
+        # Validate and convert to numpy array
+        try:
+            confidences = np.asarray(confidences)
+            if confidences.shape != (len(boxes),):
+                return np.ones(len(boxes))
+        except (ValueError, TypeError):
+            return np.ones(len(boxes))
+            
+        return confidences
+
     def track(self, boxes: FrameBoxes) -> None:
         """
         Update tracklets with boxes from a new frame using ByteTrack algorithm.
@@ -86,26 +121,30 @@ class Tracker:
         if self.previous_boxes is None:
             self.previous_boxes = self.empty_previous_boxes(boxes)
         
-        # ByteTrack: Extract detection confidences, default to 1.0 if not available
-        confidences = getattr(boxes, 'confidences', None)
-        if confidences is None:
-            confidences = boxes.metadata_kwargs.get('confidences', None)
+        # Extract confidence values in a standardized way
+        confidences = self._extract_confidences(boxes)
         
-        if confidences is None:
-            confidences = np.ones(len(boxes))
-        else:
-            try:
-                confidences = np.asarray(confidences)
-                if confidences.shape != (len(boxes),):
-                    confidences = np.ones(len(boxes))
-            except (ValueError, TypeError):
-                confidences = np.ones(len(boxes))
+        # Create paired data structures: (box, confidence) for each confidence category
+        high_conf_pairs = []
+        low_conf_pairs = []
         
-        high_conf_mask = confidences >= self.high_thresh
-        low_conf_mask = (confidences >= self.low_thresh) & (confidences < self.high_thresh)
+        for i, (box, conf) in enumerate(zip(boxes, confidences)):
+            single_box = boxes.get_single_box(i)
+            if conf >= self.high_thresh:
+                high_conf_pairs.append((single_box, conf))
+            elif conf >= self.low_thresh:
+                low_conf_pairs.append((single_box, conf))
         
-        high_conf_boxes = boxes[high_conf_mask] if np.any(high_conf_mask) else self.empty_previous_boxes(boxes)
-        low_conf_boxes = boxes[low_conf_mask] if np.any(low_conf_mask) else self.empty_previous_boxes(boxes)
+        # Create FrameBoxes for association (without confidence complexity)
+        high_conf_boxes = FrameBoxes.from_single_boxes(
+            [pair[0] for pair in high_conf_pairs], 
+            ptype=boxes.ptype, **boxes.metadata_kwargs
+        ) if high_conf_pairs else self.empty_previous_boxes(boxes)
+        
+        low_conf_boxes = FrameBoxes.from_single_boxes(
+            [pair[0] for pair in low_conf_pairs], 
+            ptype=boxes.ptype, **boxes.metadata_kwargs
+        ) if low_conf_pairs else self.empty_previous_boxes(boxes)
         
         # Step 1: Associate high confidence detections with active tracklets
         active_matches, active_unmatched_tracks, high_unmatched_dets = self._associate(
@@ -113,38 +152,28 @@ class Tracker:
         )
         
         # Update matched active tracklets with confidence
-        high_conf_indices = np.where(high_conf_mask)[0]
         for track_idx, det_idx in active_matches:
-            original_idx = high_conf_indices[det_idx] if det_idx < len(high_conf_indices) else det_idx
-            detection_confidence = confidences[original_idx] if original_idx < len(confidences) else 1.0
-            self.active_tracklets[track_idx].add_box(
-                high_conf_boxes.get_single_box(det_idx), 
-                confidence=detection_confidence
-            )
+            box, detection_confidence = high_conf_pairs[det_idx]
+            self.active_tracklets[track_idx].add_box(box, confidence=detection_confidence)
         
         # Step 2: Associate unmatched active tracklets with low confidence detections
-        # Use a more lenient threshold for low-confidence detections to recover tracks
         unmatched_active_tracklets = [self.active_tracklets[i] for i in active_unmatched_tracks]
         second_matches, second_unmatched_tracks, low_unmatched_dets = self._associate(
             unmatched_active_tracklets, low_conf_boxes, self.second_association_thresh
         )
         
         # Update second round matched tracklets with confidence
-        low_conf_indices = np.where(low_conf_mask)[0]
         for local_track_idx, det_idx in second_matches:
             global_track_idx = active_unmatched_tracks[local_track_idx]
-            original_idx = low_conf_indices[det_idx] if det_idx < len(low_conf_indices) else det_idx
-            detection_confidence = confidences[original_idx] if original_idx < len(confidences) else 1.0
-            self.active_tracklets[global_track_idx].add_box(
-                low_conf_boxes.get_single_box(det_idx),
-                confidence=detection_confidence
-            )
+            box, detection_confidence = low_conf_pairs[det_idx]
+            self.active_tracklets[global_track_idx].add_box(box, confidence=detection_confidence)
         
         # Step 3: Associate missing tracklets with remaining high confidence detections
-        remaining_high_dets = [high_conf_boxes.get_single_box(i) for i in high_unmatched_dets]
-        if remaining_high_dets and self.missing_tracklets:
+        remaining_high_pairs = [high_conf_pairs[i] for i in high_unmatched_dets]
+        if remaining_high_pairs and self.missing_tracklets:
             remaining_high_boxes = FrameBoxes.from_single_boxes(
-                remaining_high_dets, ptype=boxes.ptype, **boxes.metadata_kwargs
+                [pair[0] for pair in remaining_high_pairs], 
+                ptype=boxes.ptype, **boxes.metadata_kwargs
             )
             missing_matches, missing_unmatched_tracks, final_unmatched_dets = self._associate(
                 self.missing_tracklets, remaining_high_boxes, self.distance_threshold
@@ -153,13 +182,8 @@ class Tracker:
             # Reactivate matched missing tracklets with confidence
             for track_idx, det_idx in missing_matches:
                 self.missing_tracklets[track_idx].finalize_missing_boxes()
-                original_det_idx = high_unmatched_dets[det_idx]
-                original_idx = high_conf_indices[original_det_idx] if original_det_idx < len(high_conf_indices) else original_det_idx
-                detection_confidence = confidences[original_idx] if original_idx < len(confidences) else 1.0
-                self.missing_tracklets[track_idx].add_box(
-                    remaining_high_boxes.get_single_box(det_idx),
-                    confidence=detection_confidence
-                )
+                box, detection_confidence = remaining_high_pairs[det_idx]
+                self.missing_tracklets[track_idx].add_box(box, confidence=detection_confidence)
                 # Move from missing to active
                 self.active_tracklets.append(self.missing_tracklets[track_idx])
             
@@ -167,8 +191,8 @@ class Tracker:
             for track_idx in sorted(set(match[0] for match in missing_matches), reverse=True):
                 self.missing_tracklets.pop(track_idx)
             
-            # Update unmatched detection indices
-            high_unmatched_dets = [high_unmatched_dets[i] for i in final_unmatched_dets]
+            # Update remaining unmatched pairs
+            remaining_high_pairs = [remaining_high_pairs[i] for i in final_unmatched_dets]
         
         # Step 4: Handle unmatched active tracklets
         final_unmatched_active = [active_unmatched_tracks[i] for i in second_unmatched_tracks]
@@ -191,16 +215,10 @@ class Tracker:
                 tracklet.add_missing_box()
         
         # Step 6: Create new tracklets from high confidence unmatched detections
-        for det_idx in high_unmatched_dets:
-            # Map from high_conf_boxes index back to original boxes index to get correct confidence
-            original_idx = high_conf_indices[det_idx] if det_idx < len(high_conf_indices) else det_idx
-            if original_idx < len(confidences) and confidences[original_idx] >= self.new_track_thresh:
+        for box, confidence in remaining_high_pairs:
+            if confidence >= self.new_track_thresh:
                 self.active_tracklets.append(
-                    Tracklet(
-                        self.frame_index, 
-                        high_conf_boxes.get_single_box(det_idx),
-                        confidence=confidences[original_idx]
-                    )
+                    Tracklet(self.frame_index, box, confidence=confidence)
                 )
         
         # Update previous boxes for next frame
