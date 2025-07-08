@@ -25,6 +25,7 @@ class Tracker:
         low_thresh: float = 0.1,
         new_track_thresh: float = 0.7,
         second_association_thresh: float = 0.5,
+        preserve_history: bool = False,
     ) -> None:
         """
         Maintain and update tracklets using ByteTrack algorithm.
@@ -46,16 +47,20 @@ class Tracker:
         second_association_thresh
             Threshold for associating low-confidence detections with unmatched tracks.
             Typically more lenient than distance_threshold to recover tracks with poor detections.
+        preserve_history
+            Whether to preserve finished tracklets history for debugging
         """
         self.active_tracklets: list[Tracklet] = []
         self.missing_tracklets: list[Tracklet] = []
         self.finished_tracklets: list[Tracklet] = []
+        self.tracklet_history: list[Tracklet] = []  # For debugging/analysis
         self.previous_boxes: Optional[FrameBoxes] = None
         self.distance_threshold: float = distance_threshold
         self.distance_function = distance_function
         self.missing_threshold: int = missing_threshold
         self.frame_index: int = 0
         self.start_frame: int = 0
+        self.preserve_history: bool = preserve_history
         
         # ByteTrack specific parameters
         self.high_thresh = high_thresh
@@ -107,9 +112,15 @@ class Tracker:
             self.active_tracklets, high_conf_boxes, self.distance_threshold
         )
         
-        # Update matched active tracklets
+        # Update matched active tracklets with confidence
+        high_conf_indices = np.where(high_conf_mask)[0]
         for track_idx, det_idx in active_matches:
-            self.active_tracklets[track_idx].add_box(high_conf_boxes.get_single_box(det_idx))
+            original_idx = high_conf_indices[det_idx] if det_idx < len(high_conf_indices) else det_idx
+            detection_confidence = confidences[original_idx] if original_idx < len(confidences) else 1.0
+            self.active_tracklets[track_idx].add_box(
+                high_conf_boxes.get_single_box(det_idx), 
+                confidence=detection_confidence
+            )
         
         # Step 2: Associate unmatched active tracklets with low confidence detections
         # Use a more lenient threshold for low-confidence detections to recover tracks
@@ -118,10 +129,16 @@ class Tracker:
             unmatched_active_tracklets, low_conf_boxes, self.second_association_thresh
         )
         
-        # Update second round matched tracklets
+        # Update second round matched tracklets with confidence
+        low_conf_indices = np.where(low_conf_mask)[0]
         for local_track_idx, det_idx in second_matches:
             global_track_idx = active_unmatched_tracks[local_track_idx]
-            self.active_tracklets[global_track_idx].add_box(low_conf_boxes.get_single_box(det_idx))
+            original_idx = low_conf_indices[det_idx] if det_idx < len(low_conf_indices) else det_idx
+            detection_confidence = confidences[original_idx] if original_idx < len(confidences) else 1.0
+            self.active_tracklets[global_track_idx].add_box(
+                low_conf_boxes.get_single_box(det_idx),
+                confidence=detection_confidence
+            )
         
         # Step 3: Associate missing tracklets with remaining high confidence detections
         remaining_high_dets = [high_conf_boxes.get_single_box(i) for i in high_unmatched_dets]
@@ -133,10 +150,16 @@ class Tracker:
                 self.missing_tracklets, remaining_high_boxes, self.distance_threshold
             )
             
-            # Reactivate matched missing tracklets
+            # Reactivate matched missing tracklets with confidence
             for track_idx, det_idx in missing_matches:
                 self.missing_tracklets[track_idx].finalize_missing_boxes()
-                self.missing_tracklets[track_idx].add_box(remaining_high_boxes.get_single_box(det_idx))
+                original_det_idx = high_unmatched_dets[det_idx]
+                original_idx = high_conf_indices[original_det_idx] if original_det_idx < len(high_conf_indices) else original_det_idx
+                detection_confidence = confidences[original_idx] if original_idx < len(confidences) else 1.0
+                self.missing_tracklets[track_idx].add_box(
+                    remaining_high_boxes.get_single_box(det_idx),
+                    confidence=detection_confidence
+                )
                 # Move from missing to active
                 self.active_tracklets.append(self.missing_tracklets[track_idx])
             
@@ -168,12 +191,16 @@ class Tracker:
                 tracklet.add_missing_box()
         
         # Step 6: Create new tracklets from high confidence unmatched detections
-        high_conf_indices = np.where(high_conf_mask)[0]
         for det_idx in high_unmatched_dets:
+            # Map from high_conf_boxes index back to original boxes index to get correct confidence
             original_idx = high_conf_indices[det_idx] if det_idx < len(high_conf_indices) else det_idx
             if original_idx < len(confidences) and confidences[original_idx] >= self.new_track_thresh:
                 self.active_tracklets.append(
-                    Tracklet(self.frame_index, high_conf_boxes.get_single_box(det_idx))
+                    Tracklet(
+                        self.frame_index, 
+                        high_conf_boxes.get_single_box(det_idx),
+                        confidence=confidences[original_idx]
+                    )
                 )
         
         # Update previous boxes for next frame
@@ -233,6 +260,10 @@ class Tracker:
             ptype=boxes.ptype,
             **boxes.metadata_kwargs,
         )
+
+    def export_history(self) -> list[Tracklet]:
+        """Export tracklet history for debugging/analysis."""
+        return self.tracklet_history.copy()
 
     def make_chunk(self, fps: float, min_tracklet_length: int = 1) -> BoxTracking:
         """Consolidate tracklets to BoxTracking chunk."""
@@ -299,6 +330,10 @@ class Tracker:
                 data[chunk_start_idx:chunk_end_idx, object_idx] = tracklet_data
         
         chunk = BoxTracking(data, ptype=ptype, **metadata)
+        
+        # Preserve history if requested before clearing
+        if self.preserve_history:
+            self.tracklet_history.extend(self.finished_tracklets)
         
         # Clear finished tracklets and update start frame
         self.finished_tracklets = []

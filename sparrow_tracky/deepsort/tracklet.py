@@ -41,15 +41,32 @@ class Tracklet:
         self.object_id = object_id if object_id else str(uuid.uuid4())
         self.confidence = confidence
         self.time_since_update = 0
+        self.confidence_history = [confidence]  # Track confidence over time
 
     def __len__(self) -> int:
         """Check number of boxes in the tracklet."""
         return len(self.boxes)
 
-    def add_box(self, box: SingleBox) -> None:
-        """Append a box to the end of the array."""
+    def add_box(self, box: SingleBox, confidence: Optional[float] = None) -> None:
+        """
+        Append a box to the end of the array and update confidence.
+        
+        Parameters
+        ----------
+        box
+            The detection box to add
+        confidence
+            Confidence score for this detection. If provided, updates tracklet confidence
+            using exponential moving average.
+        """
         self.boxes = self.boxes.add_box(box)
         self.time_since_update = 0
+        
+        # Update confidence using exponential moving average if provided
+        if confidence is not None:
+            alpha = 0.3  # Smoothing factor for moving average
+            self.confidence = alpha * confidence + (1 - alpha) * self.confidence
+            self.confidence_history.append(self.confidence)
 
     def add_missing_box(self) -> None:
         """Append a box to the missing box list."""
@@ -99,3 +116,8 @@ class Tracklet:
     def is_activated(self) -> bool:
         """Check if tracklet is activated (has at least one detection)."""
         return len(self.boxes) > 0
+
+    @property
+    def mean_confidence(self) -> float:
+        """Return the mean confidence score over the tracklet's lifetime."""
+        return np.mean(self.confidence_history)

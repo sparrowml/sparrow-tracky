@@ -29,6 +29,7 @@ class MultiClassTracker:
         low_thresh: float = 0.1,
         new_track_thresh: float = 0.7,
         second_association_thresh: float = 0.5,
+        preserve_history: bool = False,
     ) -> None:
         """
         Maintain and update tracklets using ByteTrack algorithm.
@@ -52,6 +53,8 @@ class MultiClassTracker:
         second_association_thresh
             Threshold for associating low-confidence detections with unmatched tracks.
             Typically more lenient than distance_threshold to recover tracks with poor detections.
+        preserve_history
+            Whether to preserve finished tracklets history for debugging
         """
         if n_classes < 1:
             raise ValueError(f"Invalid number of classes: {n_classes}")
@@ -66,6 +69,7 @@ class MultiClassTracker:
                 low_thresh=low_thresh,
                 new_track_thresh=new_track_thresh,
                 second_association_thresh=second_association_thresh,
+                preserve_history=preserve_history,
             )
 
     @property
@@ -92,6 +96,10 @@ class MultiClassTracker:
         for class_idx in range(self.n_classes):
             _boxes = boxes[boxes.labels == class_idx].to_frame_boxes()
             self.trackers[class_idx].track(_boxes)
+
+    def export_history(self) -> dict[int, list]:
+        """Export tracklet history for all classes."""
+        return {class_idx: tracker.export_history() for class_idx, tracker in self.trackers.items()}
 
     def make_chunk(
         self, fps: float, min_tracklet_length: int = 1
