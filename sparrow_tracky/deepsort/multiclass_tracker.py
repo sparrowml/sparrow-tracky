@@ -15,7 +15,7 @@ from .tracker import Tracker
 
 
 class MultiClassTracker:
-    """Maintain and update tracklets with separate classes."""
+    """Maintain and update tracklets with separate classes using ByteTrack."""
 
     def __init__(
         self,
@@ -24,23 +24,53 @@ class MultiClassTracker:
         distance_function: Callable[
             [FrameBoxes, FrameBoxes], npt.NDArray[np.float64]
         ] = iou_distance,
+        missing_threshold: int = 30,
+        high_thresh: float = 0.6,
+        low_thresh: float = 0.1,
+        new_track_thresh: float = 0.7,
+        second_association_thresh: float = 0.5,
+        preserve_history: bool = False,
     ) -> None:
         """
-        Maintain and update tracklets.
+        Maintain and update tracklets using ByteTrack algorithm.
 
         Parameters
         ----------
+        n_classes
+            Number of classes to track
         distance_threshold
-            An IoU score below which potential pairs are eliminated
+            An IoU score below which potential pairs are eliminated for high-confidence associations
         distance_function
             Function for computing pairwise distances
+        missing_threshold
+            Number of frames to wait before finalizing a tracklet
+        high_thresh
+            High confidence threshold for detections
+        low_thresh
+            Low confidence threshold for detections
+        new_track_thresh
+            Threshold for creating new tracks
+        second_association_thresh
+            Threshold for associating low-confidence detections with unmatched tracks.
+            Typically more lenient than distance_threshold to recover tracks with poor detections.
+        preserve_history
+            Whether to preserve finished tracklets history for debugging
         """
         if n_classes < 1:
             raise ValueError(f"Invalid number of classes: {n_classes}")
         self.n_classes = n_classes
         self.trackers: dict[int, Tracker] = {}
         for class_idx in range(n_classes):
-            self.trackers[class_idx] = Tracker(distance_threshold, distance_function)
+            self.trackers[class_idx] = Tracker(
+                distance_threshold=distance_threshold,
+                distance_function=distance_function,
+                missing_threshold=missing_threshold,
+                high_thresh=high_thresh,
+                low_thresh=low_thresh,
+                new_track_thresh=new_track_thresh,
+                second_association_thresh=second_association_thresh,
+                preserve_history=preserve_history,
+            )
 
     @property
     def _first_tracker(self) -> Tracker:
@@ -66,6 +96,10 @@ class MultiClassTracker:
         for class_idx in range(self.n_classes):
             _boxes = boxes[boxes.labels == class_idx].to_frame_boxes()
             self.trackers[class_idx].track(_boxes)
+
+    def export_history(self) -> dict[int, list]:
+        """Export tracklet history for all classes."""
+        return {class_idx: tracker.export_history() for class_idx, tracker in self.trackers.items()}
 
     def make_chunk(
         self, fps: float, min_tracklet_length: int = 1
